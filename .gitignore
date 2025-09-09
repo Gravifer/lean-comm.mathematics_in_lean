@@ -4,3 +4,5 @@
 .lake
 /.cache
 .DS_Store
+/changes.zip
+.changes
