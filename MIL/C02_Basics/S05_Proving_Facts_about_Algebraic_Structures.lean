@@ -26,32 +26,30 @@ section
 variable {α : Type*} [Lattice α]
 variable (x y z : α)
 
-#check x ⊓ y
+#check x ⊓ y  -- ⊓ is the greatest lower bound, infimum, or meet.
 #check (inf_le_left : x ⊓ y ≤ x)
 #check (inf_le_right : x ⊓ y ≤ y)
 #check (le_inf : z ≤ x → z ≤ y → z ≤ x ⊓ y)
-#check x ⊔ y
+#check x ⊔ y  -- ⊔ is the least upper bound, supremum, or join.
 #check (le_sup_left : x ≤ x ⊔ y)
 #check (le_sup_right : y ≤ x ⊔ y)
 #check (sup_le : x ≤ z → y ≤ z → x ⊔ y ≤ z)
 
 example : x ⊓ y = y ⊓ x := by
-  sorry
+  apply le_antisymm; repeat
+  · apply le_inf
+    · apply inf_le_right
+    · apply inf_le_left
 
-example : x ⊓ y ⊓ z = x ⊓ (y ⊓ z) := by
-  sorry
+example : x ⊓ y ⊓ z = x ⊓ (y ⊓ z) := inf_assoc x y z
 
-example : x ⊔ y = y ⊔ x := by
-  sorry
+example : x ⊔ y = y ⊔ x := sup_comm x y
 
-example : x ⊔ y ⊔ z = x ⊔ (y ⊔ z) := by
-  sorry
+example : x ⊔ y ⊔ z = x ⊔ (y ⊔ z) := sup_assoc x y z
 
-theorem absorb1 : x ⊓ (x ⊔ y) = x := by
-  sorry
+theorem absorb1 : x ⊓ (x ⊔ y) = x := by  field_simp
 
-theorem absorb2 : x ⊔ x ⊓ y = x := by
-  sorry
+theorem absorb2 : x ⊔ x ⊓ y = x := by  field_simp
 
 end
 
@@ -70,10 +68,10 @@ variable {α : Type*} [Lattice α]
 variable (a b c : α)
 
 example (h : ∀ x y z : α, x ⊓ (y ⊔ z) = x ⊓ y ⊔ x ⊓ z) : a ⊔ b ⊓ c = (a ⊔ b) ⊓ (a ⊔ c) := by
-  sorry
+  conv =>  rhs; simp [h, inf_comm (a ⊔ b)]; rw [<-sup_assoc, inf_comm c, inf_comm c, absorb2]
 
 example (h : ∀ x y z : α, x ⊔ y ⊓ z = (x ⊔ y) ⊓ (x ⊔ z)) : a ⊓ (b ⊔ c) = a ⊓ b ⊔ a ⊓ c := by
-  sorry
+  conv => rhs; simp [h, sup_comm (a ⊓ b)]; rw [<-inf_assoc, sup_comm c, sup_comm c, absorb1]
 
 end
 
@@ -87,13 +85,23 @@ variable (a b c : R)
 #check (mul_nonneg : 0 ≤ a → 0 ≤ b → 0 ≤ a * b)
 
 example (h : a ≤ b) : 0 ≤ b - a := by
-  sorry
+  apply (add_le_add_right · (-a)) at h
+  simp only [add_neg_cancel, <-sub_eq_add_neg] at h
+  exact h
 
 example (h: 0 ≤ b - a) : a ≤ b := by
-  sorry
+  apply (add_le_add_right · a) at h
+  simp at h
+  exact h
 
-example (h : a ≤ b) (h' : 0 ≤ c) : a * c ≤ b * c := by
-  sorry
+lemma mul_le_mul1 (h : a ≤ b) (h' : 0 ≤ c) : a * c ≤ b * c := by
+  apply (add_le_add_right · (-a)) at h
+  simp only [add_neg_cancel, <-sub_eq_add_neg] at h
+  apply mul_nonneg h at h'
+  rw [sub_mul] at h'
+  apply (add_le_add_right · a) at h'
+  simp at h'
+  exact h'
 
 end
 
@@ -106,7 +114,8 @@ variable (x y z : X)
 #check (dist_triangle x y z : dist x z ≤ dist x y + dist y z)
 
 example (x y : X) : 0 ≤ dist x y := by
-  sorry
+  have h := dist_triangle x y x
+  rw [dist_self, dist_comm y x, <-two_mul] at h
+  linarith
 
 end
-
