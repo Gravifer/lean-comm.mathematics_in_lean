@@ -22,8 +22,8 @@ example : f '' (s ∪ t) = f '' s ∪ f '' t := by
   · rintro ⟨x, xs | xt, rfl⟩
     · left
       use x, xs
-    right
-    use x, xt
+    · right
+      use x, xt
   rintro (⟨x, xs, rfl⟩ | ⟨x, xt, rfl⟩)
   · use x, Or.inl xs
   use x, Or.inr xt
@@ -34,66 +34,85 @@ example : s ⊆ f ⁻¹' (f '' s) := by
   use x, xs
 
 example : f '' s ⊆ v ↔ s ⊆ f ⁻¹' v := by
-  sorry
+  constructor <;> intro h y ys <;> try simp
+  · exact h ⟨y, ys, rfl⟩
+  · rcases ys with ⟨x, xs, rfl⟩
+    exact h xs
 
 example (h : Injective f) : f ⁻¹' (f '' s) ⊆ s := by
-  sorry
+  field_simp
 
 example : f '' (f ⁻¹' u) ⊆ u := by
-  sorry
+  field_simp
 
 example (h : Surjective f) : u ⊆ f '' (f ⁻¹' u) := by
-  sorry
+  field_simp
 
 example (h : s ⊆ t) : f '' s ⊆ f '' t := by
-  sorry
+  exact image_mono h
 
 example (h : u ⊆ v) : f ⁻¹' u ⊆ f ⁻¹' v := by
-  sorry
+  tauto -- classical used
 
 example : f ⁻¹' (u ∪ v) = f ⁻¹' u ∪ f ⁻¹' v := by
-  sorry
+  field_simp
 
 example : f '' (s ∩ t) ⊆ f '' s ∩ f '' t := by
-  sorry
+  exact image_inter_subset f s t
 
 example (h : Injective f) : f '' s ∩ f '' t ⊆ f '' (s ∩ t) := by
-  sorry
+  rintro y ⟨⟨x, xs, rfl⟩, ⟨x', xt, hf⟩⟩
+  have : x' = x := h hf
+  rw [this] at xt
+  have : x ∈ s ∩ t := ⟨xs, xt⟩
+  use x, this
 
 example : f '' s \ f '' t ⊆ f '' (s \ t) := by
-  sorry
-
+  intro y ⟨⟨x, xs, fx⟩, ynft⟩
+  simp [*] at ynft
+  have : x ∈ s \ t := mem_diff_of_mem xs fun a ↦ ynft x a fx
+  use x
 example : f ⁻¹' u \ f ⁻¹' v ⊆ f ⁻¹' (u \ v) := by
-  sorry
+  field_simp
 
 example : f '' s ∩ v = f '' (s ∩ f ⁻¹' v) := by
-  sorry
+  exact Eq.symm (image_inter_preimage f s v)
 
 example : f '' (s ∩ f ⁻¹' u) ⊆ f '' s ∩ u := by
-  sorry
+  -- have h := image_inter_subset f s (f ⁻¹' u)
+  intro y ⟨x, ⟨xs, xu⟩, fx⟩
+  have : f x ∈ u := xu
+  exact ⟨⟨x, xs, fx⟩, by rwa [<-fx]⟩
 
 example : s ∩ f ⁻¹' u ⊆ f ⁻¹' (f '' s ∩ u) := by
-  sorry
+  exact inter_preimage_subset s u f
 
 example : s ∪ f ⁻¹' u ⊆ f ⁻¹' (f '' s ∪ u) := by
-  sorry
+  exact union_preimage_subset s u f
 
 variable {I : Type*} (A : I → Set α) (B : I → Set β)
 
 example : (f '' ⋃ i, A i) = ⋃ i, f '' A i := by
-  sorry
+  exact image_iUnion
 
 example : (f '' ⋂ i, A i) ⊆ ⋂ i, f '' A i := by
-  sorry
+  exact image_iInter_subset A f
 
 example (i : I) (injf : Injective f) : (⋂ i, f '' A i) ⊆ f '' ⋂ i, A i := by
-  sorry
+  intro y hy; simp_all; -- unfold Injective at *
+  rcases hy i with ⟨x, xa, fxe⟩
+  use x; constructor
+  · intro j
+    rcases hy j with ⟨x', x'a, fx'e⟩
+    have : x' = x := injf (by rw [fxe, fx'e])
+    bound
+  · exact fxe
 
 example : (f ⁻¹' ⋃ i, B i) = ⋃ i, f ⁻¹' B i := by
-  sorry
+  field_simp
 
 example : (f ⁻¹' ⋂ i, B i) = ⋂ i, f ⁻¹' B i := by
-  sorry
+  exact preimage_iInter
 
 example : InjOn f s ↔ ∀ x₁ ∈ s, ∀ x₂ ∈ s, f x₁ = f x₂ → x₁ = x₂ :=
   Iff.refl _
@@ -123,16 +142,29 @@ example : range exp = { y | y > 0 } := by
   rw [exp_log ypos]
 
 example : InjOn sqrt { x | x ≥ 0 } := by
-  sorry
+  -- unfold InjOn
+  intro x xsgn y ysgn r; dsimp at *
+  apply_fun (· ^ 2) at r
+  rwa [sq_sqrt xsgn, sq_sqrt ysgn] at r
 
 example : InjOn (fun x ↦ x ^ 2) { x : ℝ | x ≥ 0 } := by
-  sorry
+  intro x xsgn y ysgn r; dsimp at *
+  apply_fun sqrt at r
+  rwa [sqrt_sq xsgn, sqrt_sq ysgn] at r
 
 example : sqrt '' { x | x ≥ 0 } = { y | y ≥ 0 } := by
-  sorry
+  ext y; constructor <;> simp_all
+  · intros; bound
+  · intros
+    use y ^ 2
+    field_simp
 
 example : (range fun x ↦ x ^ 2) = { y : ℝ | y ≥ 0 } := by
-  sorry
+  ext y; constructor <;> simp_all
+  · intros; bound
+  · intros
+    use sqrt y
+    field_simp [sqrt_sq (by linarith)]
 
 end
 
@@ -163,11 +195,30 @@ variable (f : α → β)
 
 open Function
 
-example : Injective f ↔ LeftInverse (inverse f) f :=
-  sorry
+example : Injective f ↔ LeftInverse (inverse f) f := by
+  -- unfold Injective LeftInverse at *
+  constructor <;> intro hf x
+  · dsimp [inverse] at *
+    have  : ∃ x1, f x1 = f x := ⟨x, rfl⟩
+    simp [dif_pos h]; apply_fun f
+    rw [choose_spec this]
+  · intro x1 feq
+    obtain hf0 := hf x
+    obtain hf1 := hf x1
+    rw [<-hf0, <-hf1]
+    congr
 
-example : Surjective f ↔ RightInverse (inverse f) f :=
-  sorry
+
+
+
+example : Surjective f ↔ RightInverse (inverse f) f := by
+  -- unfold Surjective RightInverse LeftInverse at *
+  constructor <;> intro pr y
+  · obtain ⟨x, fxeq⟩ := pr y
+    exact inverse_spec y ⟨x, fxeq⟩
+  · use inverse f y
+    exact pr y
+
 
 end
 
@@ -183,10 +234,8 @@ theorem Cantor : ∀ f : α → Set α, ¬Surjective f := by
     intro h'
     have : j ∉ f j := by rwa [h] at h'
     contradiction
-  have h₂ : j ∈ S
-  sorry
-  have h₃ : j ∉ S
-  sorry
+  have h₂ : j ∈ S := h₁
+  have h₃ : j ∉ S := by rwa [h] at h₁
   contradiction
 
 -- COMMENTS: TODO: improve this
