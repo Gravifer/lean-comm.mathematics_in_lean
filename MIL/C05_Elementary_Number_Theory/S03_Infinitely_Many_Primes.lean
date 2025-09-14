@@ -252,17 +252,45 @@ theorem primes_mod_4_eq_3_infinite : ∀ n, ∃ p > n, Nat.Prime p ∧ p % 4 = 3
     rcases hn with ⟨p, ⟨pp, p4⟩, pltn⟩
     exact ⟨p, pltn, pp, p4⟩
   rcases this with ⟨s, hs⟩
-  have h₁ : ((4 * ∏ i ∈ erase s 3, i) + 3) % 4 = 3 := by
-    sorry
+  have h₁ : ((4 * ∏ i ∈ erase s 3, i) + 3) % 4 = 3 := by field_simp
   rcases exists_prime_factor_mod_4_eq_3 h₁ with ⟨p, pp, pdvd, p4eq⟩
-  have ps : p ∈ s := by
-    sorry
+  have ps : p ∈ s := by exact (hs p).mp ⟨pp, p4eq⟩
   have pne3 : p ≠ 3 := by
-    sorry
+    by_contra; simp_all
+    simp [dvd_mul] at pdvd
+    rcases pdvd with ⟨k, kd4, l, hl, kl3⟩
+    have k1 : k = 1 := by
+      have kd3 : k ∣ 3 := by exact Dvd.intro l (id (Eq.symm kl3))
+      rcases Nat.Prime.eq_one_or_self_of_dvd pp k kd3 with rfl | rfl
+      repeat omega
+    have l3 : l = 3 := by bound
+    subst k1 l3
+    have sp : ∀ i ∈ s.erase 3, Nat.Prime i := by
+      intro i hi
+      have : i ∈ s := (mem_erase.mp hi).2
+      exact (hs i).mpr this |>.1
+    have nmem_se3_of_3 : 3 ∉ s.erase 3 := Finset.notMem_erase 3 s
+    have : ¬3 ∣ ∏ i ∈ s.erase 3, i := by
+      intro h3div
+      have : 3 ∈ s.erase 3 := mem_of_dvd_prod_primes pp sp h3div
+      exact nmem_se3_of_3 this
+    exact this hl
+
   have : p ∣ 4 * ∏ i ∈ erase s 3, i := by
-    sorry
+    have : p ∈ erase s 3 := by
+      rw [mem_erase]
+      constructor
+      · exact pne3
+      · exact ps
+    -- have : p ∣ 4 * ∏ i ∈ s.erase 3, i := by
+    have := Finset.dvd_prod_of_mem id this
+    simp_all
+    exact Nat.dvd_mul_left_of_dvd this 4
   have : p ∣ 3 := by
-    sorry
+    exact (Nat.dvd_add_iff_right this).mpr pdvd
   have : p = 3 := by
-    sorry
+    clear * - p pp this
+    rcases Nat.Prime.eq_one_or_self_of_dvd (by norm_num:Nat.Prime 3) p this with rfl | rfl
+    · aesop
+    · exact rfl
   contradiction
