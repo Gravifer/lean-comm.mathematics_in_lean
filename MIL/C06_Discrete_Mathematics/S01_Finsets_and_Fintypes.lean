@@ -23,10 +23,14 @@ variable (n : ℕ)
 
 example : a ∩ (b ∪ c) = (a ∩ b) ∪ (a ∩ c) := by
   ext x; simp only [mem_inter, mem_union]; tauto
+-- compare with
+variable (a b c : Set ℕ) in example :
+    a ∩ (b ∪ c) = (a ∩ b) ∪ (a ∩ c) := by
+  ext x; simp [Set.mem_inter, Set.mem_union]; tauto
 
 example : a ∩ (b ∪ c) = (a ∩ b) ∪ (a ∩ c) := by rw [inter_union_distrib_left]
 
-#check ({0, 2, 5} : Finset Nat)
+#check ({0, 2, 5} : Finset _)
 
 def example1 : Finset ℕ := {0, 1, 2}
 
@@ -44,6 +48,7 @@ example (x y z : Nat) : ({x, y, z, y, z, x} : Finset ℕ) = {x, y, z} := by
 example (x y z : Nat) : ({x, y, z, y, z, x} : Finset ℕ) = {x, y, z} := by
   ext i; simp; tauto
 
+-- `erase` is in the `Finset` namespace, but `insert` is in the root namespace
 example (s : Finset ℕ) (a : ℕ) (h : a ∉ s) : (insert a s |>.erase a) = s :=
   Finset.erase_insert h
 
@@ -52,6 +57,7 @@ example (s : Finset ℕ) (a : ℕ) (h : a ∈ s) : insert a (s.erase a) = s :=
 
 set_option pp.notation false in
 #check ({0, 1, 2} : Finset ℕ)
+#check singleton
 
 example : {m ∈ range n | Even m} = (range n).filter Even := rfl
 example : {m ∈ range n | Even m ∧ m ≠ 3} = (range n).filter (fun m ↦ Even m ∧ m ≠ 3) := rfl
@@ -131,6 +137,13 @@ example (s : Finset ℕ) : s.card = ∑ i ∈ s, 1 := by rw [card_eq_sum_ones]
 example (s : Finset ℕ) : s.card = ∑ i ∈ s, 1 := by simp
 
 section
+/- When formalizing mathematics, one often has to make a decision as to
+    whether to express one’s definitions and theorems in terms of sets or types.
+  Using types often simplifies notation and proofs,
+    but working with subsets of a type can be more flexible.
+  The type analogue of a finset is a fintype, a type `Fintype α` for some `α`.
+  By definition, a fintype is just a data type that comes
+    equipped with a finset `univ` that contains all its elements. -/
 variable {α : Type*} [Fintype α]
 
 example : ∀ x : α, x ∈ Finset.univ := by
@@ -148,4 +161,3 @@ variable (s : Finset ℕ)
 example : (↑s : Type) = {x : ℕ // x ∈ s} := rfl
 example : Fintype.card ↑s = s.card := by simp
 end
-
