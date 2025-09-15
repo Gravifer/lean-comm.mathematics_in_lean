@@ -76,7 +76,7 @@ theorem addAlt_x (a b : Point) : (a.addAlt b).x = a.x + b.x := by
 
 theorem addAlt_comm (a b : Point) : addAlt a b = addAlt b a := by
   rw [addAlt, addAlt]
-  -- the same proof still works, but the goal view here is harder to read
+  -- // the same proof still works, but the goal view here is harder to read -- seems no longer so
   ext <;> dsimp
   repeat' apply add_comm
 
@@ -205,5 +205,7 @@ variable (s : StdSimplex)
 #check s.1
 #check s.2
 
-end
+/- The difference between a Sigma type and a subtype is that
+    the second component of a Sigma type is data rather than a proposition. -/
 
+end
