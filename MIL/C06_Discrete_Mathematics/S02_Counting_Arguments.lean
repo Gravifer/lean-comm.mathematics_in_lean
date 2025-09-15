@@ -67,6 +67,9 @@ example (n : ℕ) : #(triangle n) = (n + 1) * n / 2 := by
     intros i1 i2; simp
   rw [sum_range_id]; rfl
 
+/- The type `α ≃ β` is the type of equivalences between `α` and `β`,
+    consisting of a map in the forward direction, the map in the backward direction,
+    and proofs that these two are inverse to one another. -/
 example (n : ℕ) : #(triangle n) = (n + 1) * n / 2 := by
   have : triangle n ≃ Σ i : Fin (n + 1), Fin i.val :=
     { toFun := by
@@ -78,7 +81,7 @@ example (n : ℕ) : #(triangle n) = (n + 1) * n / 2 := by
         use ⟨j, i⟩
         simp [triangle]
         exact j.isLt.trans i.isLt
-      left_inv := by intro i; rfl
+      left_inv  := by intro i; rfl
       right_inv := by intro i; rfl }
   rw [←Fintype.card_coe]
   trans; apply (Fintype.card_congr this)
@@ -90,18 +93,37 @@ example (n : ℕ) : #(triangle n) = (n + 1) * n / 2 := by
   apply Nat.eq_div_of_mul_eq_right (by norm_num)
   let turn (p : ℕ × ℕ) : ℕ × ℕ := (n - 1 - p.1, n - p.2)
   calc 2 * #(triangle n)
-      = #(triangle n) + #(triangle n) := by
-          sorry
+      = #(triangle n) + #(triangle n) := by omega
     _ = #(triangle n) + #(triangle n |>.image turn) := by
-          sorry
+          have: Set.InjOn turn (triangle n) := by
+            simp_all [Set.InjOn, triangle, turn]; intros; omega
+          simp [*, card_image_of_injOn _]
     _ = #(range n ×ˢ range (n + 1)) := by
-          sorry
-    _ = (n + 1) * n := by
-          sorry
+          have : Disjoint (triangle n) (triangle n |>.image turn) := by
+            simp [disjoint_iff_ne, triangle, turn]; intros; omega
+          rw [<-card_union_of_disjoint]; swap; assumption; congr; ext ⟨i, j⟩
+          simp [triangle, turn]; clear * - this n i j
+          constructor
+          · rintro (⟨⟨_, _⟩, _⟩ | ⟨_, _⟩) <;> omega
+          · intro ⟨ri, rj⟩; by_cases i < j
+            · left; omega
+            · right; use n - 1 - i, n - j; omega
+    _ = (n + 1) * n := by simp [mul_comm]
 
 def triangle' (n : ℕ) : Finset (ℕ × ℕ) := {p ∈ range n ×ˢ range n | p.1 ≤ p.2}
 
-example (n : ℕ) : #(triangle' n) = #(triangle n) := by sorry
+example (n : ℕ) : #(triangle' n) = #(triangle n) := by
+  let f (p : ℕ × ℕ) : ℕ × ℕ := (p.1, p.2 + 1)
+  have : triangle n = (triangle' n |>.image f) := by
+    ext p; rcases p with ⟨p1, p2⟩
+    simp [triangle, triangle', f]
+    constructor
+    · intro h
+      use p1, p2 - 1
+      omega
+    · simp; omega
+  rw [this, card_image_of_injOn]
+  rintro ⟨p1, p2⟩ hp ⟨q1, q2⟩ hq; simp [f] at *
 
 section
 open Classical
@@ -129,8 +151,14 @@ example {n : ℕ} (A : Finset ℕ)
     ∃ m ∈ A, ∃ k ∈ A, Nat.Coprime m k := by
   have : ∃ t ∈ range n, 1 < #({u ∈ A | u / 2 = t}) := by
     apply exists_lt_card_fiber_of_mul_lt_card_of_maps_to
-    · sorry
-    · sorry
+    · intro a ha
+      specialize hA' ha
+      simp only [mem_range] at *
+      exact Nat.div_lt_of_lt_mul hA'
+    · rw [hA]; simp
   rcases this with ⟨t, ht, ht'⟩
   simp only [one_lt_card, mem_filter] at ht'
-  sorry
+  rcases ht' with ⟨m, ⟨mA, mt⟩, k, ⟨kA, kt⟩, mnek⟩
+  use m, mA, k, kA
+  have: m = k + 1 ∨ k = m + 1 := by omega
+  bound
