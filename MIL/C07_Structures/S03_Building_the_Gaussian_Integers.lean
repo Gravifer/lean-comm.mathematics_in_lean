@@ -136,6 +136,9 @@ theorem sub_re (x y : GaussInt) : (x - y).re = x.re - y.re :=
 theorem sub_im (x y : GaussInt) : (x - y).im = x.im - y.im :=
   rfl
 
+/- Library defines the class of *nontrivial* types to be
+    types with at least two distinct elements.
+  For a ring, this is just that the zero is not equal to the one. -/
 instance : Nontrivial GaussInt := by
   use 0, 1
   rw [Ne, GaussInt.ext_iff]
@@ -152,7 +155,9 @@ example (a b : ℤ) : b ≠ 0 → 0 ≤ a % b :=
 example (a b : ℤ) : b ≠ 0 → a % b < |b| :=
   Int.emod_lt_abs a
 
-namespace Int
+/-! see .lake\packages\mathlib\Mathlib\Analysis\SpecialFunctions\Gaussian\GaussianInt.lean
+  // not .lake\packages\mathlib\Mathlib\Analysis\SpecialFunctions\Gaussian\GaussianIntegral.lean-/
+namespace Int /-! credit of this approach: Heather Macbeth-/
 
 def div' (a b : ℤ) :=
   (a + b / 2) / b
@@ -173,13 +178,14 @@ theorem abs_mod'_le (a b : ℤ) (h : 0 < b) : |mod' a b| ≤ b / 2 := by
   have := Int.emod_lt_of_pos b zero_lt_two
   linarith
 
+
 theorem mod'_eq (a b : ℤ) : mod' a b = a - b * div' a b := by linarith [div'_add_mod' a b]
 
 end Int
 
 theorem sq_add_sq_eq_zero {α : Type*} [Ring α] [LinearOrder α] [IsStrictOrderedRing α]
     (x y : α) : x ^ 2 + y ^ 2 = 0 ↔ x = 0 ∧ y = 0 := by
-  sorry
+  simp_all [sq_nonneg, sq_eq_zero_iff, add_eq_zero_iff_of_nonneg]
 namespace GaussInt
 
 def norm (x : GaussInt) :=
@@ -187,13 +193,16 @@ def norm (x : GaussInt) :=
 
 @[simp]
 theorem norm_nonneg (x : GaussInt) : 0 ≤ norm x := by
-  sorry
+  simp_all [norm, sq_nonneg, Int.add_nonneg]
 theorem norm_eq_zero (x : GaussInt) : norm x = 0 ↔ x = 0 := by
-  sorry
+  simp_all [norm, sq_nonneg, sq_eq_zero_iff, sq_add_sq_eq_zero]; bound
 theorem norm_pos (x : GaussInt) : 0 < norm x ↔ x ≠ 0 := by
-  sorry
+  rcases lt_or_eq_of_le $ norm_nonneg x with _|h
+  · simp_all [Ne, not_false_iff]; intro; rw [<-norm_eq_zero] at *; bound
+  · have: x=0 := norm_eq_zero x |>.mp $ id (Eq.symm h)
+    simp_all [this]
 theorem norm_mul (x y : GaussInt) : norm (x * y) = norm x * norm y := by
-  sorry
+  simp_all [norm]; group
 def conj (x : GaussInt) : GaussInt :=
   ⟨x.re, -x.im⟩
 
