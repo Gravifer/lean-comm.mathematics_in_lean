@@ -1,5 +1,6 @@
 import MIL.Common
 import Mathlib.Data.Real.Basic
+import Mathlib.Algebra.Category.Grp.Basic
 
 namespace C06S02
 
@@ -11,6 +12,13 @@ structure Group₁ (α : Type*) where
   mul_one : ∀ x : α, mul x one = x
   one_mul : ∀ x : α, mul one x = x
   inv_mul_cancel : ∀ x : α, mul (inv x) x = one
+
+/- Compared to the situation for `Grp`, for `Group`, type `α` is separate from
+    the structure `Group α `; we refer to the two objects together as
+    a **partially bundled structure**, since the representation combines most,
+    but not all, of the components into one structure. -/
+#print Group
+#print Grp
 
 structure Grp₁ where
   α : Type*
@@ -56,6 +64,12 @@ def permGroup {α : Type*} : Group₁ (Equiv.Perm α)
 structure AddGroup₁ (α : Type*) where
   (add : α → α → α)
   -- fill in the rest
+  zero : α
+  neg : α → α
+  add_assoc : ∀ x y z : α, add (add x y) z = add x (add y z)
+  add_zero : ∀ x : α, add x zero = x
+  zero_add : ∀ x : α, add x zero = x
+  neg_add_cancel : ∀ x : α, add (neg x) x = zero
 @[ext]
 structure Point where
   x : ℝ
@@ -67,11 +81,19 @@ namespace Point
 def add (a b : Point) : Point :=
   ⟨a.x + b.x, a.y + b.y, a.z + b.z⟩
 
-def neg (a : Point) : Point := sorry
+def neg (a : Point) : Point := ⟨-a.x, -a.y, -a.z⟩
 
-def zero : Point := sorry
+def zero : Point := ⟨0,0,0⟩
 
-def addGroupPoint : AddGroup₁ Point := sorry
+#print AddGroup₁
+def addGroupPoint : AddGroup₁ Point where
+  add := Point.add
+  zero := Point.zero
+  neg := Point.neg
+  add_assoc := by simp [Point.add, add_assoc]
+  add_zero := by simp [Point.add, Point.zero]
+  zero_add := by simp [Point.add, Point.zero]
+  neg_add_cancel := by simp [Point.add, Point.neg, Point.zero]
 
 end Point
 
