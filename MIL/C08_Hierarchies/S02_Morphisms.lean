@@ -9,6 +9,10 @@ def isMonoidHom₁ [Monoid G] [Monoid H] (f : G → H) : Prop :=
 structure isMonoidHom₂ [Monoid G] [Monoid H] (f : G → H) : Prop where
   map_one : f 1 = 1
   map_mul : ∀ g g', f (g * g') = f g * f g'
+
+/- recognizing which function is applied in a given expression
+    is a very difficult problem, called the **higher-order unification problem** -/
+
 example : Continuous (id : ℝ → ℝ) := continuous_id
 @[ext]
 structure MonoidHom₁ (G H : Type) [Monoid G] [Monoid H]  where
@@ -45,9 +49,12 @@ class MonoidHomClass₁ (F : Type) (M N : Type) [Monoid M] [Monoid N] where
   map_one : ∀ f : F, toFun f 1 = 1
   map_mul : ∀ f g g', toFun f (g * g') = toFun f g * toFun f g'
 
-
 def badInst [Monoid M] [Monoid N] [MonoidHomClass₁ F M N] : CoeFun F (fun _ ↦ M → N) where
   coe := MonoidHomClass₁.toFun
+/- ! If you are curious to see the effect of such an instance
+! you can type `set_option synthInstance.checkSynthOrder false in`
+! on top of the above declaration, replace `def badInst` with `instance`,
+! and look for random failures in this file. -/
 
 
 class MonoidHomClass₂ (F : Type) (M N : outParam Type) [Monoid M] [Monoid N] where
@@ -83,7 +90,7 @@ example [Ring R] [Ring S] (f : RingHom₁ R S) {r r' : R} (h : r*r' = 1) : f r *
 map_inv_of_inv f h
 
 
-
+#print DFunLike -- `DFunLike F α β` expresses that terms of `F` have an injective coercion to (dependent) functions from `α` to `β`.
 class MonoidHomClass₃ (F : Type) (M N : outParam Type) [Monoid M] [Monoid N] extends
     DFunLike F M (fun _ ↦ N) where
   map_one : ∀ f : F, f 1 = 1
@@ -95,7 +102,7 @@ instance (M N : Type) [Monoid M] [Monoid N] : MonoidHomClass₃ (MonoidHom₁ M 
   map_one := MonoidHom₁.map_one
   map_mul := MonoidHom₁.map_mul
 
-
+-- exercise
 @[ext]
 structure OrderPresHom (α β : Type) [LE α] [LE β] where
   toFun : α → β
@@ -103,15 +110,24 @@ structure OrderPresHom (α β : Type) [LE α] [LE β] where
 
 @[ext]
 structure OrderPresMonoidHom (M N : Type) [Monoid M] [LE M] [Monoid N] [LE N] extends
-MonoidHom₁ M N, OrderPresHom M N
+    MonoidHom₁ M N, OrderPresHom M N -- no extra field needed
 
-class OrderPresHomClass (F : Type) (α β : outParam Type) [LE α] [LE β]
+class OrderPresHomClass (F : Type) (α β : outParam Type) [LE α] [LE β] extends
+    DFunLike F α (fun _ ↦ β) where
+  le_of_le : ∀ (f : F) a a', a ≤ a' → f a ≤ f a'
 
 instance (α β : Type) [LE α] [LE β] : OrderPresHomClass (OrderPresHom α β) α β where
+  coe := OrderPresHom.toFun
+  coe_injective' _ _ h := OrderPresHom.ext h
+  le_of_le := fun f ↦ f.le_of_le
 
 instance (α β : Type) [LE α] [Monoid α] [LE β] [Monoid β] :
     OrderPresHomClass (OrderPresMonoidHom α β) α β where
+  coe := fun f ↦ f.toFun
+  coe_injective' _ _ := OrderPresMonoidHom.ext
+  le_of_le := fun f ↦ f.le_of_le
 
 instance (α β : Type) [LE α] [Monoid α] [LE β] [Monoid β] :
-    MonoidHomClass₃ (OrderPresMonoidHom α β) α β
-  := sorry
+    MonoidHomClass₃ (OrderPresMonoidHom α β) α β where
+  map_one := fun f ↦ f.map_one
+  map_mul := fun f ↦ f.map_mul
