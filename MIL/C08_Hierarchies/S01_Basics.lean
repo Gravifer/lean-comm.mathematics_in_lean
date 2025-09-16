@@ -23,7 +23,7 @@ example (α : Type) [One₁ α] : α := One₁.one
 
 example (α : Type) [One₁ α] := (One₁.one : α)
 
-@[inherit_doc]
+@[inherit_doc] -- * always use this when defining notation
 notation "𝟙" => One₁.one
 
 example {α : Type} [One₁ α] : α := 𝟙
@@ -118,14 +118,11 @@ example {M : Type} [Monoid₁ M] {a b c : M} (hba : b ⋄ a = 𝟙) (hac : a ⋄
   rw [← one_dia c, ← hba, dia_assoc, hac, dia_one b]
 
 
-lemma inv_eq_of_dia [Group₁ G] {a b : G} (h : a ⋄ b = 𝟙) : a⁻¹ = b :=
-  sorry
+lemma inv_eq_of_dia [Group₁ G] {a b : G} (h : a ⋄ b = 𝟙) : a⁻¹ = b := by
+  rw [<-one_dia b, <-inv_dia a, dia_assoc, h, dia_one a⁻¹]
 
-lemma dia_inv [Group₁ G] (a : G) : a ⋄ a⁻¹ = 𝟙 :=
-  sorry
-
-
-
+lemma dia_inv [Group₁ G] (a : G) : a ⋄ a⁻¹ = 𝟙 := by
+  rw [← inv_dia a⁻¹, inv_eq_of_dia (inv_dia a)]
 
 class AddSemigroup₃ (α : Type) extends Add α where
   /-- Addition is associative -/
@@ -144,10 +141,17 @@ class Monoid₃ (α : Type) extends Semigroup₃ α, MulOneClass α
 export Semigroup₃ (mul_assoc₃)
 export AddSemigroup₃ (add_assoc₃)
 
+section --! see https://leanprover.zulipchat.com/#narrow/channel/287929-mathlib4/topic/.22tactic.20not.20used.22.20warning.20upon.20.60to_additive.60.20lemma/with/539715852
+#count_heartbeats! in def f₁ := 37
+set_option Elab.async false
+-- set_option linter.unreachableTactic false
+-- set_option linter.unusedTactic false
+#count_heartbeats! in def f₂ := 37
 whatsnew in
 @[to_additive]
 lemma left_inv_eq_right_inv' {M : Type} [Monoid₃ M] {a b c : M} (hba : b * a = 1) (hac : a * c = 1) : b = c := by
   rw [← one_mul c, ← hba, mul_assoc₃, hac, mul_one b]
+end
 
 #check left_neg_eq_right_neg'
 
@@ -174,23 +178,24 @@ class Group₃ (G : Type) extends Monoid₃ G, Inv G where
 attribute [simp] Group₃.inv_mul AddGroup₃.neg_add
 
 
-
 @[to_additive]
-lemma inv_eq_of_mul [Group₃ G] {a b : G} (h : a * b = 1) : a⁻¹ = b :=
-  sorry
+lemma inv_eq_of_mul [Group₃ G] {a b : G} (h : a * b = 1) : a⁻¹ = b := by
+  rw [← one_mul b, <-Group₃.inv_mul a, mul_assoc₃, h, mul_one]
 
 
 @[to_additive (attr := simp)]
 lemma Group₃.mul_inv {G : Type} [Group₃ G] {a : G} : a * a⁻¹ = 1 := by
-  sorry
+  rw [← inv_mul a⁻¹, inv_eq_of_mul (inv_mul a)]
 
 @[to_additive]
 lemma mul_left_cancel₃ {G : Type} [Group₃ G] {a b c : G} (h : a * b = a * c) : b = c := by
-  sorry
+  have : a⁻¹ * (a * b) = a⁻¹ * (a * c) := by rw [h]
+  simpa [<-mul_assoc₃, Group₃.inv_mul, one_mul, one_mul]
 
 @[to_additive]
 lemma mul_right_cancel₃ {G : Type} [Group₃ G] {a b c : G} (h : b*a = c*a) : b = c := by
-  sorry
+  have : (b*a)*a⁻¹ = (c*a)*a⁻¹ := by rw [h]
+  simpa [mul_assoc₃, Group₃.mul_inv, mul_one, mul_one]
 
 class AddCommGroup₃ (G : Type) extends AddGroup₃ G, AddCommMonoid₃ G
 
@@ -205,9 +210,19 @@ class Ring₃ (R : Type) extends AddGroup₃ R, Monoid₃ R, MulZeroClass R wher
   /-- Multiplication is right distributive over addition -/
   right_distrib : ∀ a b c : R, (a + b) * c = a * c + b * c
 
-instance {R : Type} [Ring₃ R] : AddCommGroup₃ R :=
-{ add_comm := by
-    sorry }
+instance {R : Type} [Ring₃ R] : AddCommGroup₃ R := {
+  add_comm := by
+    intro a b
+    have : a + (a + b + b) = a + (b + a + b) := calc a + (a + b + b)
+      _ = (a + a) + (b + b)                 := by simp [add_assoc₃]
+      _ = (1 * a + 1 * a) + (1 * b + 1 * b) := by simp
+      _ = (1 + 1) * a + (1 + 1) * b         := by simp [Ring₃.right_distrib]
+      _ = (1 + 1) * (a + b)                 := by simp [Ring₃.left_distrib]
+      _ = 1 * (a + b) + 1 * (a + b)         := by simp [Ring₃.right_distrib]
+      _ = (a + b) + (a + b)                 := by simp
+      _ = a + (b + a + b)                   := by simp [add_assoc₃]
+    exact add_right_cancel₃ (add_left_cancel₃ this)
+}
 
 instance : Ring₃ ℤ where
   add := (· + ·)
@@ -247,7 +262,7 @@ class SMul₃ (α : Type) (β : Type) where
 
 infixr:73 " • " => SMul₃.smul
 
-
+-- * short answer: each class appearing in the extends clause should mention **every** type appearing in the parameters.
 class Module₁ (R : Type) [Ring₃ R] (M : Type) [AddCommGroup₃ M] extends SMul₃ R M where
   zero_smul : ∀ m : M, (0 : R) • m = 0
   one_smul : ∀ m : M, (1 : R) • m = m
@@ -272,7 +287,7 @@ def zsmul₁ {M : Type*} [Zero M] [Add M] [Neg M] : ℤ → M → M
   | Int.negSucc n, a => -nsmul₁ n.succ a
 
 instance abGrpModule (A : Type) [AddCommGroup₃ A] : Module₁ ℤ A where
-  smul := zsmul₁
+  smul := zsmul₁  -- ! not asked to do these sorries
   zero_smul := sorry
   one_smul := sorry
   mul_smul := sorry
@@ -280,7 +295,10 @@ instance abGrpModule (A : Type) [AddCommGroup₃ A] : Module₁ ℤ A where
   smul_add := sorry
 
 #synth Module₁ ℤ ℤ -- abGrpModule ℤ
-
+/- * a diamond having a Prop-valued class at the bottom cannot be bad
+   * since any two proofs of the same statement are definitionally equal.
+  Note: for bad diamonds, see [forgetful inheritance](https://inria.hal.science/hal-02463336)
+-/
 
 class AddMonoid₄ (M : Type) extends AddSemigroup₃ M, AddZeroClass M where
   /-- Multiplication by a natural number. -/
@@ -311,4 +329,3 @@ instance : AddMonoid₄ ℤ where
     by rw [Int.add_mul, Int.add_comm, Int.one_mul]
 
 example (n : ℕ) (m : ℤ) : SMul.smul (self := mySMul) n m = n * m := rfl
-
