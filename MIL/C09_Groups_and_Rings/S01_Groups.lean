@@ -363,12 +363,32 @@ variable [H.Normal] [K.Normal] [Fintype G] (h : Disjoint H K)
 #check ker_eq_bot_iff
 #check restrict
 #check ker_restrict
-
+#check G ⧸ H
 def iso₁ : K ≃* G ⧸ H := by
-  sorry
+  apply MulEquiv.ofBijective <| QuotientGroup.mk' H |>.restrict K
+  rw [Nat.bijective_iff_injective_and_card]; constructor
+  · rw [<-ker_eq_bot_iff]
+    rw [QuotientGroup.mk' H |>.ker_restrict K]
+    simp [h]
+  · symm
+    exact aux_card_eq h'
 def iso₂ : G ≃* (G ⧸ K) × (G ⧸ H) := by
-  sorry
+  apply MulEquiv.ofBijective <| QuotientGroup.mk' K |>.prod <| QuotientGroup.mk' H
+  rw [Nat.bijective_iff_injective_and_card]; constructor
+  · rw [<-ker_eq_bot_iff, ker_prod]
+    simp [h.symm.eq_bot]
+  · rw [Nat.card_prod]
+    rw [aux_card_eq h']
+    have := mul_comm (Nat.card H) _ ▸ h'
+    have := aux_card_eq this
+    rwa [this]
 #check MulEquiv.prodCongr
 
-def finalIso : G ≃* H × K :=
-  sorry
+#check iso₁
+#check iso₂
+def finalIso : G ≃* H × K := by
+  refine MulEquiv.trans (iso₂ h h') ?_
+  symm
+  have KeqQH := iso₁ h h'
+  have HeqQQ := iso₁ h.symm <| Nat.mul_comm _ _ ▸ h'
+  exact MulEquiv.prodCongr HeqQQ KeqQH
