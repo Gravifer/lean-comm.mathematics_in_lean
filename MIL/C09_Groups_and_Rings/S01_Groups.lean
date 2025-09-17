@@ -324,6 +324,7 @@ example {G : Type*} [Group G] (N : Subgroup G) [N.Normal] {M : Type*}
     [Group M] (φ : G →* M) (h : N ≤ MonoidHom.ker φ) : G ⧸ N →* M :=
   QuotientGroup.lift N φ h
 
+/-- the first isomorphism theorem -/
 example {G : Type*} [Group G] {M : Type*} [Group M] (φ : G →* M) :
     G ⧸ MonoidHom.ker φ →* MonoidHom.range φ :=
   QuotientGroup.quotientKerEquivRange φ
@@ -335,6 +336,8 @@ example {G G': Type*} [Group G] [Group G']
 
 example {G : Type*} [Group G] {M N : Subgroup G} [M.Normal]
     [N.Normal] (h : M = N) : G ⧸ M ≃* G ⧸ N := QuotientGroup.quotientMulEquivOfEq h
+
+/-! final series of exercises for this section -/
 
 section
 variable {G : Type*} [Group G] {H K : Subgroup G}
@@ -348,7 +351,11 @@ open MonoidHom
 
 lemma aux_card_eq [Finite G] (h' : Nat.card G = Nat.card H * Nat.card K) :
     Nat.card (G ⧸ H) = Nat.card K := by
-  sorry
+  have: 0 < Nat.card H := Nat.card_pos
+  rw [<-Nat.mul_left_cancel_iff this, <-h']
+  rw [<-Subgroup.index_eq_card, mul_comm]
+  exact Subgroup.index_mul_card H
+
 variable [H.Normal] [K.Normal] [Fintype G] (h : Disjoint H K)
   (h' : Nat.card G = Nat.card H * Nat.card K)
 
