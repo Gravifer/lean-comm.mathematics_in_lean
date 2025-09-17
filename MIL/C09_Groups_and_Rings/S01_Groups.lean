@@ -5,6 +5,8 @@ import Mathlib.GroupTheory.PresentedGroup
 
 import MIL.Common
 
+/-! ## Monoids and Groups -/
+
 example {M : Type*} [Monoid M] (x : M) : x * 1 = x := mul_one x
 
 example {M : Type*} [AddCommMonoid M] (x y : M) : x + y = y + x := add_comm x y
@@ -20,6 +22,8 @@ example {M N : Type*} [AddMonoid M] [AddMonoid N] (f : M →+ N) : f 0 = 0 :=
 
 example {M N P : Type*} [AddMonoid M] [AddMonoid N] [AddMonoid P]
     (f : M →+ N) (g : N →+ P) : M →+ P := g.comp f
+
+/-! ### Groups and their morphisms -/
 
 example {G : Type*} [Group G] (x : G) : x * x⁻¹ = 1 := mul_inv_cancel x
 
@@ -47,6 +51,8 @@ noncomputable example {G H : Type*} [Group G] [Group H]
     (f : G →* H) (h : Function.Bijective f) :
     G ≃* H :=
   MulEquiv.ofBijective f h
+
+/-! ### Subgroups -/
 
 example {G : Type*} [Group G] (H : Subgroup G) {x y : G} (hx : x ∈ H) (hy : y ∈ H) :
     x * y ∈ H :=
@@ -89,13 +95,15 @@ def conjugate {G : Type*} [Group G] (x : G) (H : Subgroup G) : Subgroup G where
   carrier := {a : G | ∃ h, h ∈ H ∧ a = x * h * x⁻¹}
   one_mem' := by
     dsimp
-    sorry
+    use 1; simp; exact H.one_mem
   inv_mem' := by
     dsimp
-    sorry
+    rintro _ ⟨z, hz, rfl⟩
+    use z⁻¹; simp [H.inv_mem hz]; group
   mul_mem' := by
     dsimp
-    sorry
+    rintro _ - ⟨ya, hya, rfl⟩ ⟨yb,  hyb, rfl⟩ -- using `-` is the same as `_`
+    use ya * yb; simp [H.mul_mem hya hyb]
 
 example {G H : Type*} [Group G] [Group H] (G' : Subgroup G) (f : G →* H) : Subgroup H :=
   Subgroup.map f G'
@@ -107,7 +115,7 @@ example {G H : Type*} [Group G] [Group H] (H' : Subgroup H) (f : G →* H) : Sub
 #check Subgroup.mem_comap
 
 example {G H : Type*} [Group G] [Group H] (f : G →* H) (g : G) :
-    g ∈ MonoidHom.ker f ↔ f g = 1 :=
+    g ∈ f.ker ↔ f g = 1 := -- `f.ker` means `MonoidHom.ker f`
   f.mem_ker
 
 example {G H : Type*} [Group G] [Group H] (f : G →* H) (h : H) :
@@ -119,24 +127,39 @@ variable {G H : Type*} [Group G] [Group H]
 
 open Subgroup
 
+#check SetLike.le_def
 example (φ : G →* H) (S T : Subgroup H) (hST : S ≤ T) : comap φ S ≤ comap φ T := by
-  sorry
+  rintro x inpreS
+  rw [mem_comap] at * -- Lean does not need this line
+  apply hST at inpreS -- since `≤` in any setlike lattice behaves like `⊆`
+  exact inpreS
 
 example (φ : G →* H) (S T : Subgroup G) (hST : S ≤ T) : map φ S ≤ map φ T := by
-  sorry
+  rintro y ⟨x, xS, rfl⟩
+  rw [mem_map] at * -- Lean does not need this line
+  use x, hST xS
 
 variable {K : Type*} [Group K]
 
 -- Remember you can use the `ext` tactic to prove an equality of subgroups.
 example (φ : G →* H) (ψ : H →* K) (U : Subgroup K) :
     comap (ψ.comp φ) U = comap φ (comap ψ U) := by
-  sorry
+  ext x
+  simp only [mem_comap]
+  rfl
 
 -- Pushing a subgroup along one homomorphism and then another is equal to
 -- pushing it forward along the composite of the homomorphisms.
 example (φ : G →* H) (ψ : H →* K) (S : Subgroup G) :
     map (ψ.comp φ) S = map ψ (S.map φ) := by
-  sorry
+  ext z
+  simp only [mem_map]; constructor
+  · rintro ⟨x, xS, rfl⟩
+    use φ x, ⟨x, xS, rfl⟩
+    rfl
+  · rintro ⟨y, ⟨x, xS, rfl⟩, rfl⟩
+    use x, xS
+    rfl
 
 end exercises
 
@@ -145,9 +168,14 @@ open scoped Classical
 
 example {G : Type*} [Group G] (G' : Subgroup G) : Nat.card G' ∣ Nat.card G :=
   ⟨G'.index, mul_comm G'.index _ ▸ G'.index_mul_card.symm⟩
+example {G : Type*} [Group G] (G' : Subgroup G) : Nat.card G' ∣ Nat.card G := by
+  rw [dvd_def]
+  use G'.index
+  rw [mul_comm, G'.index_mul_card]
 
 open Subgroup
 
+-- * the aforementioned `Fact` typeclass
 example {G : Type*} [Group G] [Finite G] (p : ℕ) {n : ℕ} [Fact p.Prime]
     (hdvd : p ^ n ∣ Nat.card G) : ∃ K : Subgroup G, Nat.card K = p ^ n :=
   Sylow.exists_subgroup_card_pow_prime p hdvd
@@ -156,13 +184,25 @@ lemma eq_bot_iff_card {G : Type*} [Group G] {H : Subgroup G} :
     H = ⊥ ↔ Nat.card H = 1 := by
   suffices (∀ x ∈ H, x = 1) ↔ ∃ x ∈ H, ∀ a ∈ H, a = x by
     simpa [eq_bot_iff_forall, Nat.card_eq_one_iff_exists]
-  sorry
+  constructor
+  · intro h; use 1, H.one_mem
+  · rintro ⟨e, eH, h⟩ x hx
+    suffices x = e by
+      rw [this]; exact (h 1 H.one_mem).symm
+    exact h x hx
 
 #check card_dvd_of_le
 
 lemma inf_bot_of_coprime {G : Type*} [Group G] (H K : Subgroup G)
     (h : (Nat.card H).Coprime (Nat.card K)) : H ⊓ K = ⊥ := by
-  sorry
+  rw [Subgroup.eq_bot_iff_card, Nat.Coprime] at *
+  refine Nat.eq_one_of_dvd_coprimes h ?_ ?_
+  -- `↥` is `\u-|`; see https://github.com/leanprover/vscode-lean4/blob/3b4441de90b7331ce5730938c37da210b4a74750/lean4-unicode-input/src/abbreviations.json#L841-L844
+  exact card_dvd_of_le inf_le_left
+  exact card_dvd_of_le inf_le_right
+
+/-! ### Concrete groups -/
+
 open Equiv
 
 example {X : Type*} [Finite X] : Subgroup.closure {σ : Perm X | Perm.IsCycle σ} = ⊤ :=
