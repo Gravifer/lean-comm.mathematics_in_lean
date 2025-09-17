@@ -262,9 +262,15 @@ example {G X : Type*} [Group G] [MulAction G X] : G →* Equiv.Perm X :=
 def CayleyIsoMorphism (G : Type*) [Group G] : G ≃* (toPermHom G G).range :=
   Equiv.Perm.subgroupOfMulAction G G
 
+#print orbit
+example {G X : Type*} [Group G] [MulAction G X] : Setoid X := orbitRel G X
+#print orbitRel
+
 example {G X : Type*} [Group G] [MulAction G X] :
     X ≃ (ω : orbitRel.Quotient G X) × (orbit G (Quotient.out ω)) :=
   MulAction.selfEquivSigmaOrbits G X
+#print Sigma  -- `(a : α) × β a` is the same as `Σ a : α, β a`
+
 
 example {G X : Type*} [Group G] [MulAction G X] (x : X) :
     orbit G x ≃ G ⧸ stabilizer G x :=
@@ -275,17 +281,37 @@ example {G : Type*} [Group G] (H : Subgroup G) : G ≃ (G ⧸ H) × H :=
 
 variable {G : Type*} [Group G]
 
+#print conjugate
 lemma conjugate_one (H : Subgroup G) : conjugate 1 H = H := by
-  sorry
+  unfold conjugate; simp
+  ext x; rw [<-mem_carrier]
+  simp only [Subsemigroup.carrier]
+  rw [Membership.mem, Membership.mem]
+  rfl
 
 instance : MulAction G (Subgroup G) where
   smul := conjugate
   one_smul := by
-    sorry
+    intro H
+    exact conjugate_one H
   mul_smul := by
-    sorry
+    intro x y H
+    unfold HSMul.hSMul instHSMul; dsimp
+    unfold conjugate; simp
+    ext z; simp
+    constructor
+    · rintro ⟨h, h_in, rfl⟩
+      use y*h*y⁻¹
+      constructor
+      · use h
+      · group
+    · rintro ⟨_, ⟨h, h_in, rfl⟩, rfl⟩
+      use h, h_in
+      group
 
 end GroupActions
+
+/-! ### Quotient groups -/
 
 noncomputable section QuotientGroup
 
