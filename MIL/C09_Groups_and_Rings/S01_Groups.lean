@@ -208,20 +208,22 @@ open Equiv
 example {X : Type*} [Finite X] : Subgroup.closure {σ : Perm X | Perm.IsCycle σ} = ⊤ :=
   Perm.closure_isCycle
 
-#simp [mul_assoc] c[1, 2, 3] * c[2, 3, 4]
+#simp [mul_assoc] c[(1 : Fin 5), 2, 3] * c[2, 3, 4]
 
 section FreeGroup
 
 inductive S | a | b | c
 
 open S
-
+#print FreeGroup.mk
+#print FreeGroup.of
 def myElement : FreeGroup S := (.of a) * (.of b)⁻¹
 
 def myMorphism : FreeGroup S →* Perm (Fin 5) :=
-  FreeGroup.lift fun | .a => c[1, 2, 3]
-                     | .b => c[2, 3, 1]
-                     | .c => c[2, 3]
+  FreeGroup.lift $ fun -- lambda with pattern matching
+                    | .a => c[1, 2, 3]
+                    | .b => c[2, 3, 1]
+                    | .c => c[2, 3]
 
 
 def myGroup := PresentedGroup {.of () ^ 3} deriving Group
@@ -231,6 +233,7 @@ def myMap : Unit → Perm (Fin 5)
 
 lemma compat_myMap :
     ∀ r ∈ ({.of () ^ 3} : Set (FreeGroup Unit)), FreeGroup.lift myMap r = 1 := by
+  -- unfold singleton
   rintro _ rfl
   simp
   decide
@@ -238,6 +241,8 @@ lemma compat_myMap :
 def myNewMorphism : myGroup →* Perm (Fin 5) := PresentedGroup.toGroup compat_myMap
 
 end FreeGroup
+
+/-! ### Group actions -/
 
 noncomputable section GroupActions
 

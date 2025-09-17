@@ -25,7 +25,7 @@
     "editor.minimap.enabled": false,
     "editor.acceptSuggestionOnEnter": "off",
     "editor.quickSuggestions.comments": true,
-    "scm.diffDecorationsGutterVisibility": "hover",
+    "scm.diffDecorationsGutterVisibility": "always",
     "editor.semanticHighlighting.enabled": true,
     "editor.semanticTokenColorCustomizations": {
         "[Default Light+]": {"rules": {"variable": "#1a31da"}}
