@@ -61,7 +61,7 @@ lemma chineseMap_surj [Fintype ι] {I : ι → Ideal R}
       intros j hj
       exact hI _ _ (by simpa [ne_comm, isCoprime_iff_add] using hj)
     rcases isCoprime_iff_exists.mp (isCoprime_Inf hI') with ⟨u, hu, e, he, hue⟩
-    replace he : ∀ j, j ≠ i → e ∈ I j := by simpa using he
+    replace he : ∀ j, j ≠ i → e ∈ I j := by simpa using he -- trifecta `have` `obtain` `replace`
     refine ⟨e, ?_, ?_⟩
     · simp [eq_sub_of_add_eq' hue, map_sub, eq_zero_iff_mem.mpr hu]
     · exact fun j hj ↦ eq_zero_iff_mem.mpr (he j hj)
@@ -79,4 +79,3 @@ noncomputable def chineseIso [Fintype ι] (f : ι → Ideal R)
     chineseMap f with }
 
 end
-

@@ -137,10 +137,16 @@ theorem isCoprime_Inf {I : Ideal R} {J : ι → Ideal R} {s : Finset ι}
       rw [Finset.iInf_insert, inf_comm, one_eq_top, eq_top_iff, ← one_eq_top]
       set K := ⨅ j ∈ s, J j
       calc
-        1 = I + K                  := sorry
-        _ = I + K * (I + J i)      := sorry
-        _ = (1 + K) * I + K * J i  := sorry
-        _ ≤ I + K ⊓ J i            := sorry
+        1 = I + K                  := by
+              symm; apply hs; intro j js
+              refine hf j ?_; exact Finset.mem_insert_of_mem js
+        _ = I + K * (I + J i)      := by
+              congr ; rw [hf i (Finset.mem_insert_self i s), mul_one]
+        _ = (1 + K) * I + K * J i  := by ring
+        _ ≤ I + K ⊓ J i            := by
+              gcongr
+              · apply mul_le_left
+              · apply mul_le_inf
 lemma chineseMap_surj [Fintype ι] {I : ι → Ideal R}
     (hI : ∀ i j, i ≠ j → IsCoprime (I i) (I j)) : Surjective (chineseMap I) := by
   classical
@@ -149,11 +155,31 @@ lemma chineseMap_surj [Fintype ι] {I : ι → Ideal R}
   have key : ∀ i, ∃ e : R, mk (I i) e = 1 ∧ ∀ j, j ≠ i → mk (I j) e = 0 := by
     intro i
     have hI' : ∀ j ∈ ({i} : Finset ι)ᶜ, IsCoprime (I i) (I j) := by
-      sorry
-    sorry
+      intro j jh; simp [*, <-ne_eq] at jh; exact hI i j jh.symm
+    have := isCoprime_iff_exists.mp (isCoprime_Inf hI')
+    rcases this with ⟨u, hu, e, he, hue⟩
+    replace he : ∀ j, j ≠ i → e ∈ I j := by simpa using he -- trifecta `have` `obtain` `replace`
+    use e; constructor
+    · apply eq_sub_of_add_eq' at hue; subst hue
+      simp [map_sub]
+      rwa [<-eq_zero_iff_mem] at hu
+    · intro j hj
+      rw [eq_zero_iff_mem]
+      exact he j hj
+
   choose e he using key
   use mk _ (∑ i, f i * e i)
-  sorry
+  ext i
+  rw [chineseMap_mk', map_sum]
+  conv => lhs; congr; rfl; intro j; rw [map_mul]
+  have : ∀ (j : ι), j ≠ i → (mk (I i)) (f j) * (mk (I i)) (e j) = 0 := by
+    intro j hj
+    rw [he j |>.right i _]
+    simp; exact hj.symm
+  rw [Fintype.sum_eq_single i this]
+  specialize hf i
+  replace he := he i |>.left
+  simp [hf, he]
 
 noncomputable def chineseIso [Fintype ι] (f : ι → Ideal R)
     (hf : ∀ i j, i ≠ j → IsCoprime (f i) (f j)) : (R ⧸ ⨅ i, f i) ≃+* Π i, R ⧸ f i :=
@@ -161,6 +187,8 @@ noncomputable def chineseIso [Fintype ι] (f : ι → Ideal R)
     chineseMap f with }
 
 end
+
+/-! ### Algebras and polynomials -/
 
 example {R A : Type*} [CommRing R] [Ring A] [Algebra R A] (r r' : R) (a : A) :
     (r + r') • a = r • a + r' • a :=
