@@ -130,5 +130,8 @@
             "bold": true,
             "italic": false
         }
-    ]
+    ],
+    "files.readonlyInclude": {
+        "**/C*_*/solutions/*": true
+    }
 }

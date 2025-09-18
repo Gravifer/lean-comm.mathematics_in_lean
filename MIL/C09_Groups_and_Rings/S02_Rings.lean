@@ -9,6 +9,12 @@ noncomputable section
 
 example {R : Type*} [CommRing R] (x y : R) : (x + y) ^ 2 = x ^ 2 + y ^ 2 + 2 * x * y := by ring
 
+/- `group` actually applies all monoids,
+    and `ring` actually work for all *commutative* semirings
+      (but not proper rings that are non-commutative)
+    since `group` uses `ring` under the hood,
+      it also needs commutativity to be effective -/
+
 example (x y : ℕ) : (x + y) ^ 2 = x ^ 2 + y ^ 2 + 2 * x * y := by ring
 
 example (x : ℤˣ) : x = 1 ∨ x = -1 := Int.units_eq_one_or x
@@ -25,6 +31,9 @@ example {R S : Type*} [Ring R] [Ring S] (f : R →+* S) : Rˣ →* Sˣ :=
 
 example {R : Type*} [Ring R] (S : Subring R) : Ring S := inferInstance
 
+
+/-! ### Ideals and quotients -/
+
 example {R : Type*} [CommRing R] (I : Ideal R) : R →+* R ⧸ I :=
   Ideal.Quotient.mk I
 
@@ -36,11 +45,13 @@ example {R S : Type*} [CommRing R] [CommRing S] (I : Ideal R) (f : R →+* S)
     (H : I ≤ RingHom.ker f) : R ⧸ I →+* S :=
   Ideal.Quotient.lift I f H
 
+/-- first isomorphism theorem for rings -/
 example {R S : Type*} [CommRing R] [CommRing S](f : R →+* S) :
     R ⧸ RingHom.ker f ≃+* f.range :=
   RingHom.quotientKerEquivRange f
 
-section
+section  /- Ideals form a complete lattice structure
+              with the inclusion relation, as well as a semiring structure -/
 variable {R : Type*} [CommRing R] {I J : Ideal R}
 
 example : I + J = I ⊔ J := rfl
@@ -57,46 +68,54 @@ example : I * J ≤ I ⊓ J := Ideal.mul_le_inf
 end
 
 example {R S : Type*} [CommRing R] [CommRing S] (I : Ideal R) (J : Ideal S) (f : R →+* S)
-    (H : I ≤ Ideal.comap f J) : R ⧸ I →+* S ⧸ J :=
+    (H : I ≤ Ideal.comap f J) : R ⧸ I →+* S ⧸ J := -- `comap` is easier to work with due to the lack of an existential quantifier
   Ideal.quotientMap J f H
 
 example {R : Type*} [CommRing R] {I J : Ideal R} (h : I = J) : R ⧸ I ≃+* R ⧸ J :=
   Ideal.quotEquivOfEq h
 
 example {R : Type*} [CommRing R] {ι : Type*} [Fintype ι] (f : ι → Ideal R)
-    (hf : ∀ i j, i ≠ j → IsCoprime (f i) (f j)) : (R ⧸ ⨅ i, f i) ≃+* Π i, R ⧸ f i :=
+    (hf : ∀ i j, i ≠ j → IsCoprime (f i) (f j)) : (R ⧸ ⨅/-`\infi`-/ i, f i) ≃+* Π/-`\Pi`-/ i, R ⧸ f i :=
   Ideal.quotientInfRingEquivPiQuotient f hf
 
 open BigOperators PiNotation
-
+/-- Chinese remainder theorem -/
 example {ι : Type*} [Fintype ι] (a : ι → ℕ) (coprime : ∀ i j, i ≠ j → (a i).Coprime (a j)) :
-    ZMod (∏ i, a i) ≃+* Π i, ZMod (a i) :=
+    ZMod (∏/-`\prod`-/ i, a i) ≃+* Π i, ZMod (a i) :=
   ZMod.prodEquivPi a coprime
 
-section
+section  /-! exercise: Chinese remainder theorem in the general case -/
 variable {ι R : Type*} [CommRing R]
 open Ideal Quotient Function
 
 #check Pi.ringHom
 #check ker_Pi_Quotient_mk
 
-/-- The homomorphism from ``R ⧸ ⨅ i, I i`` to ``Π i, R ⧸ I i`` featured in the Chinese
-  Remainder Theorem. -/
-def chineseMap (I : ι → Ideal R) : (R ⧸ ⨅ i, I i) →+* Π i, R ⧸ I i :=
-  sorry
+/-- The homomorphism from ``R ⧸ ⨅ i, I i`` to ``Π i, R ⧸ I i``
+                    featured in the Chinese Remainder Theorem. -/
+def chineseMap (I : ι → Ideal R) : (R ⧸ ⨅ i, I i) →+* Π i, R ⧸ I i := by
+  -- apply Pi.ringHom
+  -- intro i
+  refine Ideal.Quotient.lift (⨅ i, I i) (Pi.ringHom fun i ↦ mk $ I i) ?_
+  intro x hx
+  rw [← RingHom.mem_ker]
+  rwa [← ker_Pi_Quotient_mk I] at hx
 
 lemma chineseMap_mk (I : ι → Ideal R) (x : R) :
-    chineseMap I (Quotient.mk _ x) = fun i : ι ↦ Ideal.Quotient.mk (I i) x :=
-  sorry
+    chineseMap I (Quotient.mk _ x) = fun i : ι ↦ Ideal.Quotient.mk (I i) x := by
+  rfl
 
 lemma chineseMap_mk' (I : ι → Ideal R) (x : R) (i : ι) :
-    chineseMap I (mk _ x) i = mk (I i) x :=
-  sorry
+    chineseMap I (mk _ x) i = mk (I i) x := by
+  rfl
 
 #check injective_lift_iff
 
+/- Easy half of the Chinese remainder theorem, without any assumption on the family of ideals.
+  Proof can be less than one line long. -/
 lemma chineseMap_inj (I : ι → Ideal R) : Injective (chineseMap I) := by
-  sorry
+  rw [chineseMap, injective_lift_iff, ker_Pi_Quotient_mk]
+  -- TODO: make a discrete version of the proof
 
 #check IsCoprime
 #check isCoprime_iff_add
