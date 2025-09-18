@@ -238,6 +238,7 @@ example {R : Type*} [CommRing R] [IsDomain R] (r : R) (n : ℕ):
     ((X - C r) ^ n).roots = n • {r} :=
   by simp
 
+#print aeval
 example : aeval Complex.I (X ^ 2 + 1 : ℝ[X]) = 0 := by simp
 
 open Complex Polynomial
@@ -266,6 +267,9 @@ open MvPolynomial
 
 def circleEquation : MvPolynomial (Fin 2) ℝ := X 0 ^ 2 + X 1 ^ 2 - 1
 
+/- Recall the `![...]` notation denotes elements of `Fin n → X`
+    for some natural number `n` determined by the number of arguments
+    and some type `X` determined by the type of arguments. -/
 example : MvPolynomial.eval ![1, 0] circleEquation = 0 := by simp [circleEquation]
 
 end Polynomials
