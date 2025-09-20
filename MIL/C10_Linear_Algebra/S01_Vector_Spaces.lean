@@ -70,6 +70,7 @@ noncomputable example (f : V →ₗ[K] W) (h : Function.Bijective f) : V ≃ₗ[
   .ofBijective f h
 
 
+/-! ### Sums and products -/
 section binary_product
 
 variable {W : Type*} [AddCommGroup W] [Module K W]
