@@ -46,7 +46,7 @@ variable (θ : W →ₗ[K] V)
 #check (φ ∘ₗ θ : W →ₗ[K] W)
 
 
-example : V →ₗ[K] V where
+example : V →ₗ[K] V where  -- type `example : V →ₗ[K] V := _ `and there is a "Generate a skeleton" in the VS Code quick-fix attached to the underscore.
   toFun v := 3 • v
   map_add' _ _ := smul_add ..
   map_smul' _ _ := smul_comm ..
