@@ -161,7 +161,14 @@ example : Surjective φ ↔ range φ = ⊤ := range_eq_top.symm
 
 example (E : Submodule K V) (F : Submodule K W) :
     Submodule.map φ E ≤ F ↔ E ≤ Submodule.comap φ F := by
-  sorry
+  constructor <;> intro prec
+  · rintro x hx; simp
+    suffices : φ x ∈ Submodule.map φ E; exact prec this
+    use x, hx
+  · rintro y ⟨x, hx, rfl⟩
+    exact prec hx
+
+/-! #### Quotient spaces -/
 
 variable (E : Submodule K V)
 
