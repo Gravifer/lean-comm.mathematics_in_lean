@@ -19,7 +19,7 @@ example (U : Submodule K V) {x : V} (hx : x ∈ U) (a : K) :
 noncomputable example : Submodule ℝ ℂ where
   carrier := Set.range ((↑) : ℝ → ℂ)
   add_mem' := by
-    rintro _ _ ⟨n, rfl⟩ ⟨m, rfl⟩
+    rintro n m; rintro ⟨n, rfl⟩; rintro ⟨m, rfl⟩
     use n + m
     simp
   zero_mem' := by
@@ -35,24 +35,40 @@ def preimage {W : Type*} [AddCommGroup W] [Module K W] (φ : V →ₗ[K] W) (H :
     Submodule K V where
   carrier := φ ⁻¹' H
   zero_mem' := by
-    sorry
+    suffices : φ 0 ∈ H; exact this
+    rw [φ.map_zero]
+    exact H.zero_mem'
   add_mem' := by
-    sorry
+    rintro x1 x2 hx1 hx2
+    simp_all
+    exact H.add_mem hx1 hx2
   smul_mem' := by
-    sorry
+    rintro a x hx
+    simp_all
+    exact H.smul_mem a hx
 
 example (U : Submodule K V) : Module K U := inferInstance
 
 example (U : Submodule K V) : Module K {x : V // x ∈ U} := inferInstance
 
+/-! #### Complete lattice structure and internal direct sums -/
+
 example (H H' : Submodule K V) :
-    ((H ⊓ H' : Submodule K V) : Set V) = (H : Set V) ∩ (H' : Set V) := rfl
+    ((H ⊓ H' : _) : Set V) = (H : Set V) ∩ (H' : Set V) := rfl
 
 example (H H' : Submodule K V) :
     ((H ⊔ H' : Submodule K V) : Set V) = Submodule.span K ((H : Set V) ∪ (H' : Set V)) := by
   simp [Submodule.span_union]
 
 example (x : V) : x ∈ (⊤ : Submodule K V) := trivial
+
+-- You can coerce the submodule to its underlying set
+example : (⊤ : Submodule K V) = (Set.univ : Set V) := rfl
+-- And there are ways to move elements back and forth
+example (x : V) : x ∈ (⊤ : Submodule K V) := trivial
+-- There's typically a canonical isomorphism
+noncomputable example : (⊤ : Submodule K V) ≃ₗ[K] V :=
+  Submodule.topEquiv
 
 example (x : V) : x ∈ (⊥ : Submodule K V) ↔ x = 0 := Submodule.mem_bot K
 
@@ -88,6 +104,8 @@ noncomputable example {ι : Type*} [DecidableEq ι] (U : ι → Submodule K V)
     (h : DirectSum.IsInternal U) : (⨁ i, U i) ≃ₗ[K] V :=
   LinearEquiv.ofBijective (coeLinearMap U) h
 end
+
+/-! #### Subspace spanned by a set -/
 
 example {s : Set V} (E : Submodule K V) : Submodule.span K s ≤ E ↔ s ⊆ E :=
   Submodule.span_le
