@@ -110,6 +110,8 @@ end
 example {s : Set V} (E : Submodule K V) : Submodule.span K s ≤ E ↔ s ⊆ E :=
   Submodule.span_le
 
+/- `GaloisInsertion` is defined as a `struct` not a`class`,
+    because there is no canonical one (because `choice` is arbitrarily valid) -/
 example : GaloisInsertion (Submodule.span K) ((↑) : Submodule K V → Set V) :=
   Submodule.gi K V
 
@@ -118,14 +120,19 @@ example {S T : Submodule K V} {x : V} (h : x ∈ S ⊔ T) :
   rw [← S.span_eq, ← T.span_eq, ← Submodule.span_union] at h
   induction h using Submodule.span_induction with
   | mem y h =>
-      sorry
-  | zero =>
-      sorry
+      rcases h with h|h
+      · use y, h, 0, T.zero_mem, by simp
+      · use 0, S.zero_mem, y, h, by simp
+  | zero => use 0, S.zero_mem, 0, T.zero_mem, by simp
   | add x y hx hy hx' hy' =>
-      sorry
+      rcases hx' with ⟨sx, hsx, tx, htx, rfl⟩
+      rcases hy' with ⟨sy, hsy, ty, hty, rfl⟩
+      use sx + sy, S.add_mem hsx hsy, tx + ty, T.add_mem htx hty, by module
   | smul a x hx hx' =>
-      sorry
+      rcases hx' with ⟨sx, hsx, tx, htx, rfl⟩
+      use a • sx, S.smul_mem a hsx, a • tx, T.smul_mem a htx, by module
 
+/-! #### Pushing and pulling subspaces -/
 section
 
 variable {W : Type*} [AddCommGroup W] [Module K W] (φ : V →ₗ[K] W)
