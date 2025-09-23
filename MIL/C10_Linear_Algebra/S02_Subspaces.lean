@@ -193,7 +193,17 @@ open Submodule
 #check Submodule.comap_map_eq
 
 example : Submodule K (V ⧸ E) ≃ { F : Submodule K V // E ≤ F } where
-  toFun := sorry
-  invFun := sorry
-  left_inv := sorry
-  right_inv := sorry
+  toFun := by
+    intro F; let F' := comap E.mkQ F
+    use F'; rw [← E.ker_mkQ, ← comap_bot]; subst F'
+    gcongr; exact bot_le
+  invFun := fun F => map E.mkQ F
+  left_inv := by
+    intro F; simp
+    rw [Submodule.map_comap_eq, E.range_mkQ]
+    exact top_inf_eq F
+  right_inv := by
+    intro ⟨F,hF⟩; ext
+    dsimp only
+    rw [Submodule.comap_map_eq, E.ker_mkQ, sup_of_le_left]
+    exact hF
