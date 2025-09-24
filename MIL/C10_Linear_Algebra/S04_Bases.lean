@@ -68,6 +68,9 @@ example : !![(1 : ℝ), 2; 3, 4]⁻¹ * !![(1 : ℝ), 2; 3, 4] = 1 := by
   norm_num [Matrix.inv_def]
   exact one_fin_two.symm
 
+#check Fin 1
+#print Fin
+
 section
 
 example : (fun _ ↦ 1 : Fin 2 → Fin 2 → ℤ) = !![1, 1; 1, 1] := by
@@ -88,6 +91,7 @@ end
 end matrices
 variable {K : Type*} [Field K] {V : Type*} [AddCommGroup V] [Module K V]
 
+/-! #### Bases -/
 section
 
 variable {ι : Type*} (B : Basis ι K V) (v : V) (i : ι)
