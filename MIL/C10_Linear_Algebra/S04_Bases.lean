@@ -202,9 +202,13 @@ example [Fintype ι] (B' : Basis ι K V) (φ : End K V) :
   set M' := toMatrix B' B' φ
   set P := (toMatrix B B') LinearMap.id
   set P' := (toMatrix B' B) LinearMap.id
-  sorry
+  have: M' = P * M * P' := by simp [M, M', P, P']
+  rw [this, Matrix.det_mul, Matrix.det_mul, mul_right_comm,
+      ← Matrix.det_mul, ← toMatrix_comp, comp_id, toMatrix_id, det_one]
+  simp
 end
 
+/-! #### Dimension -/
 section
 #check (Module.finrank K V : ℕ)
 
