@@ -134,7 +134,28 @@ example {X : Type*} [MetricSpace X] {Y : Type*} [MetricSpace Y] {f : X → Y} :
 example {X : Type*} [MetricSpace X] [CompactSpace X]
       {Y : Type*} [MetricSpace Y] {f : X → Y}
     (hf : Continuous f) : UniformContinuous f := by
-  sorry
+  rw [Metric.uniformContinuous_iff]
+  intro ε εpos
+  let φ : X × X → ℝ := fun p ↦ dist (f p.1) (f p.2)
+  let K := { p : X × X | ε ≤ φ p }
+  have φ_cont : Continuous φ := hf.fst'.dist hf.snd'
+  have K_compact : IsCompact K := isClosed_le continuous_const φ_cont |>.isCompact
+  rw [Metric.continuous_iff] at hf
+  rcases eq_empty_or_nonempty K with hK|hK
+  · use ε, (by linarith); intro x y _
+    simpa [K] using (by simp [hK] : (x, y) ∉ K)
+  · rcases K_compact.exists_isMinOn hK continuous_dist.continuousOn with ⟨⟨x₀, x₁⟩, xx_in, H⟩
+    use dist x₀ x₁
+    constructor
+    · change _ < _
+      rw [dist_pos]
+      intro h
+      have : ε ≤ 0 := by simpa [K, φ, *] using xx_in
+      linarith
+    · intro x x'
+      contrapose!
+      intro (hxx' : (x, x') ∈ K)
+      exact H hxx'
 
 /-! #### Completeness -/
 
