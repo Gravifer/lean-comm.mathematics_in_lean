@@ -55,6 +55,8 @@ example {X Y : Type*} [MetricSpace X] [MetricSpace Y] (f : X → Y) (a : X) :
     ContinuousAt f a ↔ ∀ ε > 0, ∃ δ > 0, ∀ {x}, dist x a < δ → dist (f x) (f a) < ε :=
   Metric.continuousAt_iff
 
+/-! #### Balls, open sets and closed sets -/
+
 variable (r : ℝ)
 
 example : Metric.ball a r = { b | dist b a < r } :=
@@ -84,7 +86,11 @@ example {s : Set X} : a ∈ closure s ↔ ∀ ε > 0, ∃ b ∈ s, a ∈ Metric.
 
 example {u : ℕ → X} (hu : Tendsto u atTop (𝓝 a)) {s : Set X} (hs : ∀ n, u n ∈ s) :
     a ∈ closure s := by
-  sorry
+  rw [Metric.mem_closure_iff]
+  intro ε εpos
+  obtain ⟨n, hn⟩ := Metric.tendsto_atTop.mp hu ε εpos
+  use u n, hs n, dist_comm a _ ▸ (hn n $ le_refl n)
+
 example {x : X} {s : Set X} : s ∈ 𝓝 x ↔ ∃ ε > 0, Metric.ball x ε ⊆ s :=
   Metric.nhds_basis_ball.mem_iff
 
