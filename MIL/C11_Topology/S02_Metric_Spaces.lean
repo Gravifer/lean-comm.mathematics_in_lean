@@ -97,6 +97,8 @@ example {x : X} {s : Set X} : s ∈ 𝓝 x ↔ ∃ ε > 0, Metric.ball x ε ⊆ 
 example {x : X} {s : Set X} : s ∈ 𝓝 x ↔ ∃ ε > 0, Metric.closedBall x ε ⊆ s :=
   Metric.nhds_basis_closedBall.mem_iff
 
+/-! #### Compactness -/
+
 example : IsCompact (Set.Icc 0 1 : Set ℝ) :=
   isCompact_Icc
 
@@ -122,6 +124,8 @@ example {X : Type*} [MetricSpace X] [CompactSpace X] : IsCompact (univ : Set X) 
 
 #check IsCompact.isClosed
 
+/-! #### Uniformly continuous functions -/
+
 example {X : Type*} [MetricSpace X] {Y : Type*} [MetricSpace Y] {f : X → Y} :
     UniformContinuous f ↔
       ∀ ε > 0, ∃ δ > 0, ∀ {a b : X}, dist a b < δ → dist (f a) (f b) < ε :=
@@ -131,6 +135,9 @@ example {X : Type*} [MetricSpace X] [CompactSpace X]
       {Y : Type*} [MetricSpace Y] {f : X → Y}
     (hf : Continuous f) : UniformContinuous f := by
   sorry
+
+/-! #### Completeness -/
+
 example (u : ℕ → X) :
     CauchySeq u ↔ ∀ ε > 0, ∃ N : ℕ, ∀ m ≥ N, ∀ n ≥ N, dist (u m) (u n) < ε :=
   Metric.cauchySeq_iff
