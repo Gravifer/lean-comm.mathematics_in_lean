@@ -179,18 +179,35 @@ theorem cauchySeq_of_le_geometric_two' {u : ℕ → X}
     (hu : ∀ n : ℕ, dist (u n) (u (n + 1)) ≤ (1 / 2) ^ n) : CauchySeq u := by
   rw [Metric.cauchySeq_iff']
   intro ε ε_pos
-  obtain ⟨N, hN⟩ : ∃ N : ℕ, 1 / 2 ^ N * 2 < ε := by sorry
+  obtain ⟨N, hN⟩ : ∃ N : ℕ, 1 / 2 ^ N * 2 < ε := by
+    -- conv_rhs =>
+    --   intro N
+    --   suffices 2^N > 2 / ε by
+    --     rw [← div_lt_iff (by linarith : 0 < ε), ← one_div_one_div]
+    --     exact this
+    have : Tendsto (fun N : ℕ ↦ (1 / 2 ^ N * 2 : ℝ)) atTop (𝓝 0) := by
+      rw [← zero_mul (2 : ℝ)]
+      apply Tendsto.mul
+      simp_rw [← one_div_pow (2 : ℝ)]
+      apply tendsto_pow_atTop_nhds_zero_of_lt_one <;> linarith
+      exact tendsto_const_nhds
+    rcases(atTop_basis.tendsto_iff (nhds_basis_Ioo_pos (0 : ℝ))).mp this ε ε_pos with ⟨N, _, hN⟩
+    exact ⟨N, by simpa using (hN N left_mem_Ici).2⟩
   use N
   intro n hn
   obtain ⟨k, rfl : n = N + k⟩ := le_iff_exists_add.mp hn
   calc
-    dist (u (N + k)) (u N) = dist (u (N + 0)) (u (N + k)) := sorry
-    _ ≤ ∑ i  ∈ range k, dist (u (N + i)) (u (N + (i + 1))) := sorry
-    _ ≤ ∑ i  ∈ range k, (1 / 2 : ℝ) ^ (N + i) := sorry
-    _ = 1 / 2 ^ N * ∑ i  ∈ range k, (1 / 2 : ℝ) ^ i := sorry
-    _ ≤ 1 / 2 ^ N * 2 := sorry
-    _ < ε := sorry
+    dist (u (N + k)) (u N) = dist (u (N + 0)) (u (N + k)) := by rw [dist_comm, add_zero]
+    _ ≤ ∑ i  ∈ range k, dist (u (N + i)) (u (N + (i + 1))) :=
+      (dist_le_range_sum_dist (fun i ↦ u (N + i)) k)
+    _ ≤ ∑ i  ∈ range k, (1 / 2 : ℝ) ^ (N + i) := (sum_le_sum fun i _ ↦ hu <| N + i)
+    _ = 1 / 2 ^ N * ∑ i  ∈ range k, (1 / 2 : ℝ) ^ i := by simp_rw [← one_div_pow, pow_add, ← mul_sum]
+    _ ≤ 1 / 2 ^ N * 2 :=
+      (mul_le_mul_of_nonneg_left (sum_geometric_two_le _)
+        (one_div_nonneg.mpr (pow_nonneg (zero_le_two : (0 : ℝ) ≤ 2) _)))
+    _ < ε := hN
 
+/- * prepare for final boss of this section: Baire’s theorem for complete metric spaces!-/
 
 open Metric
 
