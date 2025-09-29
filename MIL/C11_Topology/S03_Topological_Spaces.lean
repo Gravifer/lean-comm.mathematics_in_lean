@@ -50,7 +50,13 @@ example {P : X → Prop} {x : X} (h : ∀ᶠ y in 𝓝 x, P y) : ∀ᶠ y in �
 example {α : Type*} (n : α → Filter α) (H₀ : ∀ a, pure a ≤ n a)
     (H : ∀ a : α, ∀ p : α → Prop, (∀ᶠ x in n a, p x) → ∀ᶠ y in n a, ∀ᶠ x in n y, p x) :
     ∀ a, ∀ s ∈ n a, ∃ t ∈ n a, t ⊆ s ∧ ∀ a' ∈ t, s ∈ n a' := by
-  sorry
+  intro a s hs
+  have := H a (· ∈ s) hs
+  simp only [mem_setOf_eq] at this
+  use { y | s ∈ n y }, this
+  constructor <;> intro y hy
+  · exact H₀ y hy
+  · exact hy
 end
 
 variable {X Y : Type*}
@@ -87,6 +93,8 @@ example (ι : Type*) (X : ι → Type*) (T_X : ∀ i, TopologicalSpace (X i)) :
       ⨅ i, TopologicalSpace.induced (fun x ↦ x i) (T_X i) :=
   rfl
 
+/-! #### Separation and countability -/
+
 example [TopologicalSpace X] [T2Space X] {u : ℕ → X} {a b : X} (ha : Tendsto u atTop (𝓝 a))
     (hb : Tendsto u atTop (𝓝 b)) : a = b :=
   tendsto_nhds_unique ha hb
@@ -99,17 +107,42 @@ example [TopologicalSpace X] {x : X} :
     (𝓝 x).HasBasis (fun t : Set X ↦ t ∈ 𝓝 x ∧ IsOpen t) id :=
   nhds_basis_opens' x
 
+#check IsDenseInducing.continuousAt_extend
+
 theorem aux {X Y A : Type*} [TopologicalSpace X] {c : A → X}
       {f : A → Y} {x : X} {F : Filter Y}
       (h : Tendsto f (comap c (𝓝 x)) F) {V' : Set Y} (V'_in : V' ∈ F) :
     ∃ V ∈ 𝓝 x, IsOpen V ∧ c ⁻¹' V ⊆ f ⁻¹' V' := by
-  sorry
+  rw [Filter.HasBasis.tendsto_left_iff <| nhds_basis_opens' x |>.comap c] at h
+  obtain ⟨V, ⟨hV, oV⟩, mV⟩ := h V' V'_in
+  use V, hV, oV, mV
 
 example [TopologicalSpace X] [TopologicalSpace Y] [T3Space Y] {A : Set X}
     (hA : ∀ x, x ∈ closure A) {f : A → Y} (f_cont : Continuous f)
     (hf : ∀ x : X, ∃ c : Y, Tendsto f (comap (↑) (𝓝 x)) (𝓝 c)) :
     ∃ φ : X → Y, Continuous φ ∧ ∀ a : A, φ a = f a := by
-  sorry
+  -- let φ x := Classical.choose (hf x)
+  choose φ hφ using hf
+  use φ, by
+    rw [continuous_iff_continuousAt]; intro x
+    suffices ∀ V' ∈ 𝓝 (φ x), IsClosed V' → φ ⁻¹' V' ∈ 𝓝 x by
+      simpa [ContinuousAt, (closed_nhds_basis (φ x)).tendsto_right_iff]
+    intro V' V'_in V'_closed
+    obtain ⟨V, V_in, V_op, hV⟩ : ∃ V ∈ 𝓝 x, IsOpen V ∧ (↑) ⁻¹' V ⊆ f ⁻¹' V' := aux (hφ x) V'_in
+    suffices : ∀ y ∈ V, φ y ∈ V'
+    exact mem_of_superset V_in this
+    intro y y_in
+    have hVx : V ∈ 𝓝 y := V_op.mem_nhds y_in
+    haveI : (comap ((↑) : A → X) (𝓝 y)).NeBot := by simpa [mem_closure_iff_comap_neBot] using hA y
+    apply V'_closed.mem_of_tendsto (hφ y)
+    exact mem_of_superset (preimage_mem_comap hVx) hV
+    -- unfold ContinuousAt
+    -- unfold Tendsto at hφ ⊢
+    -- have := hφ x
+    -- apply le_trans _ this
+  intro a
+  have lim : Tendsto f (𝓝 a) (𝓝 (φ a)) := by simpa [nhds_induced] using hφ a
+  exact tendsto_nhds_unique lim f_cont.continuousAt
 
 #check HasBasis.tendsto_right_iff
 
@@ -117,6 +150,8 @@ example [TopologicalSpace X] [FirstCountableTopology X]
       {s : Set X} {a : X} :
     a ∈ closure s ↔ ∃ u : ℕ → X, (∀ n, u n ∈ s) ∧ Tendsto u atTop (𝓝 a) :=
   mem_closure_iff_seq_limit
+
+/-! #### Compactness -/
 
 variable [TopologicalSpace X]
 
