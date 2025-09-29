@@ -211,19 +211,40 @@ theorem cauchySeq_of_le_geometric_two' {u : ℕ → X}
 
 open Metric
 
+#print Dense
+#check closure
 example [CompleteSpace X] (f : ℕ → Set X) (ho : ∀ n, IsOpen (f n)) (hd : ∀ n, Dense (f n)) :
     Dense (⋂ n, f n) := by
   let B : ℕ → ℝ := fun n ↦ (1 / 2) ^ n
-  have Bpos : ∀ n, 0 < B n
-  sorry
+  have Bpos : ∀ n, 0 < B n := by simp [B]
+  -- //sorry
   /- Translate the density assumption into two functions `center` and `radius` associating
     to any n, x, δ, δpos a center and a positive radius such that
     `closedBall center radius` is included both in `f n` and in `closedBall x δ`.
     We can also require `radius ≤ (1/2)^(n+1)`, to ensure we get a Cauchy sequence later. -/
-  have :
-    ∀ (n : ℕ) (x : X),
-      ∀ δ > 0, ∃ y : X, ∃ r > 0, r ≤ B (n + 1) ∧ closedBall y r ⊆ closedBall x δ ∩ f n :=
-    by sorry
+  have: ∀ (n : ℕ) (x : X), ∀ δ > 0, ∃ y : X, ∃ r > 0,
+      r ≤ B (n + 1) ∧ closedBall y r ⊆ closedBall x δ ∩ f n := by
+    intro n x δ δpos; specialize ho n; specialize hd n
+    have x_in: x ∈ closure (f n) := hd x
+    rw [mem_closure_iff_nhds_basis nhds_basis_closedBall] at x_in
+    let δ' := min δ (B (n + 1)) / 2
+    have δ'pos : 0 < δ' := by simp [δ', δpos, Bpos]
+    rcases x_in δ' δ'pos with ⟨y, y_in, hy⟩
+    obtain ⟨rf, rfpos, hrf⟩ : ∃ r > 0, closedBall y r ⊆ f n :=
+      nhds_basis_closedBall.mem_iff.1 <| isOpen_iff_mem_nhds.1 ho y y_in
+    let r := min rf δ'
+    have rpos : 0 < r := by bound
+    use y, r, rpos, by calc
+      r ≤ δ' := min_le_right _ _
+      _ ≤ B (n + 1) / 2 := by bound
+      _ ≤ B (n + 1) := by bound
+    rw [Set.subset_inter_iff]; constructor <;> intro z hz <;> simp_all [mem_setOf_eq]
+    · have: δ' ≤ δ/2 := by bound
+      calc dist z x ≤ dist z y + dist y x := dist_triangle z y x
+        _ ≤ r + δ' := by linarith [hz, hy]
+        _ ≤ δ' + δ' := by bound
+        _ ≤ δ := by bound
+    · apply hrf; aesop
   choose! center radius Hpos HB Hball using this
   intro x
   rw [mem_closure_iff_nhds_basis nhds_basis_closedBall]
@@ -239,17 +260,55 @@ example [CompleteSpace X] (f : ℕ → Set X) (ho : ∀ n, IsOpen (f n)) (hd : �
       fun n p ↦ Prod.mk (center n p.1 p.2) (radius n p.1 p.2)
   let c : ℕ → X := fun n ↦ (F n).1
   let r : ℕ → ℝ := fun n ↦ (F n).2
-  have rpos : ∀ n, 0 < r n := by sorry
-  have rB : ∀ n, r n ≤ B n := by sorry
+  have rpos : ∀ n, 0 < r n := by intro n; induction n with
+    | zero => aesop
+    | succ n ih => bound
+  have rB : ∀ n, r n ≤ B n := by  intro n; induction n with
+    | zero => aesop
+    | succ n ih => bound
   have incl : ∀ n, closedBall (c (n + 1)) (r (n + 1)) ⊆ closedBall (c n) (r n) ∩ f n := by
-    sorry
-  have cdist : ∀ n, dist (c n) (c (n + 1)) ≤ B n := by sorry
+    intro n; exact Hball n (c n) (r n) (rpos n)
+  have cdist : ∀ n, dist (c n) (c (n + 1)) ≤ B n := by
+    intro n; refine le_trans ?_ (rB n)
+    have: c (n + 1) ∈ closedBall (c (n + 1)) (r (n + 1)) :=
+      mem_closedBall_self (rpos <| n + 1).le
+    replace this := incl n <| this
+    rw [mem_inter_iff] at this
+    replace this := mem_setOf.mp this.1
+    rwa [dist_comm] at this
   have : CauchySeq c := cauchySeq_of_le_geometric_two' cdist
   -- as the sequence `c n` is Cauchy in a complete space, it converges to a limit `y`.
   rcases cauchySeq_tendsto_of_complete this with ⟨y, ylim⟩
   -- this point `y` will be the desired point. We will check that it belongs to all
   -- `f n` and to `ball x ε`.
   use y
-  have I : ∀ n, ∀ m ≥ n, closedBall (c m) (r m) ⊆ closedBall (c n) (r n) := by sorry
-  have yball : ∀ n, y ∈ closedBall (c n) (r n) := by sorry
-  sorry
+  have I : ∀ n, ∀ m ≥ n, closedBall (c m) (r m) ⊆ closedBall (c n) (r n) := by
+    intro n m hm; induction' hm with m' hm' h; · rfl
+    · replace incl := (Set.subset_inter_iff.mp <| incl m').1
+      intro x hx
+      exact h <| incl hx
+  have yball : ∀ n, y ∈ closedBall (c n) (r n) := by
+    intro n
+    refine isClosed_closedBall.mem_of_tendsto ylim ?_
+    rw [Filter.eventually_atTop]; use n; intro m hm
+    exact I n m hm (mem_closedBall_self (rpos _).le)
+    -- intro n
+    -- -- apply I n (n+2); linarith
+    -- replace ylim := Filter.Tendsto.basis_right ylim (nhds_basis_closedBall (x:=y))
+    -- conv at ylim => ext ρ; enter [-1, 1]; ext m; rw [mem_closedBall_comm]
+    -- have := ylim (r (n+2)) (rpos (n+2))
+    -- rw [Filter.eventually_atTop] at this
+    -- obtain ⟨m, hm⟩ := this
+    -- let m' := max m (n + 2)
+    -- have m'gem : m' ≥ m := le_max_left _ _
+    -- have m'gen2 : m' ≥ n + 2 := le_max_right _ _
+    -- have hm' := hm m' m'gem
+  constructor
+  · suffices ∀ n, y ∈ f n by rwa [Set.mem_iInter]
+    intro n
+    have : closedBall (c (n + 1)) (r (n + 1)) ⊆ f n :=
+      Subset.trans (incl n) Set.inter_subset_right
+    exact this (yball (n + 1))
+  calc
+    dist y x ≤ r 0 := yball 0
+    _ ≤ ε := min_le_left _ _
