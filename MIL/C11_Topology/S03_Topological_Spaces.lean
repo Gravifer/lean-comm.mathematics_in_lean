@@ -175,10 +175,23 @@ example {x : X} {F : Filter X} {G : Filter Y} (H : ClusterPt x F) {f : X → Y}
 example [TopologicalSpace Y] {f : X → Y} (hf : Continuous f) {s : Set X} (hs : IsCompact s) :
     IsCompact (f '' s) := by
   intro F F_ne F_le
-  have map_eq : map f (𝓟 s ⊓ comap f F) = 𝓟 (f '' s) ⊓ F := by sorry
-  have Hne : (𝓟 s ⊓ comap f F).NeBot := by sorry
+  have map_eq : map f (𝓟 s ⊓ comap f F) = 𝓟 (f '' s) ⊓ F := by
+    -- rw [map_inf, map_principal, map_comap, inf_comm F, ← inf_assoc] -- !`map_inf` requires `Injective f`
+    -- have : 𝓟 (f '' s) ≤ 𝓟 (range f) := by
+    --   apply principal_mono.mpr; simp
+    -- rw [inf_of_le_left this]
+    rw [Filter.push_pull, map_principal]
+  have Hne : (𝓟 s ⊓ comap f F).NeBot := by
+    apply NeBot.of_map (m:=f)
+    rwa [map_eq, inf_of_le_right F_le]
   have Hle : 𝓟 s ⊓ comap f F ≤ 𝓟 s := inf_le_left
-  sorry
+  unfold IsCompact at hs
+  -- #check hs Hle
+  rcases hs Hle with ⟨x, x_in, hx⟩
+  use f x, mem_image_of_mem f x_in
+  apply hx.map hf.continuousAt
+  rw [Tendsto, map_eq]
+  exact inf_le_right
 
 example {ι : Type*} {s : Set X} (hs : IsCompact s) (U : ι → Set X) (hUo : ∀ i, IsOpen (U i))
     (hsU : s ⊆ ⋃ i, U i) : ∃ t : Finset ι, s ⊆ ⋃ i ∈ t, U i :=
