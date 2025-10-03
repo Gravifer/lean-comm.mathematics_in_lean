@@ -29,6 +29,16 @@
 					"label": ""
 				}
 			]
+		},
+		{
+			"path": "../../../../../../../../.elan/toolchains/leanprover--lean4---v4.21.0/src/lean/Init/Tactics.lean",
+			"bookmarks": [
+				{
+					"line": 1272,
+					"column": 0,
+					"label": ""
+				}
+			]
 		}
 	]
 }

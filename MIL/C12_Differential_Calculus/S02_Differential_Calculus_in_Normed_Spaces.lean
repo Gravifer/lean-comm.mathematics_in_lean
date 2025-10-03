@@ -12,6 +12,7 @@ open Topology Filter
 
 noncomputable section
 
+/-! #### Normed spaces -/
 section
 
 variable {E : Type*} [NormedAddCommGroup E]
@@ -50,6 +51,7 @@ example (𝕜 : Type*) [NontriviallyNormedField 𝕜] (E : Type*) [NormedAddComm
 
 end
 
+/-! #### Continuous linear maps -/
 section
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
@@ -80,38 +82,67 @@ example {M : ℝ} (hMp : 0 ≤ M) (hM : ∀ x, ‖f x‖ ≤ M * ‖x‖) : ‖f
 
 end
 
-section
+section Banach_Steinhaus
+
+/- * Baire category theorem -/
+#check nonempty_interior_of_iUnion_of_closed
+
+#check ContinuousLinearMap.opNorm_le_of_shell
+#check interior_subset
+#check interior_iInter_subset
+#check isClosed_le
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 open Metric
 
+/-- The Banach-Steinhaus theorem (uniform boundedness principle | 共鳴定理) -/
 example {ι : Type*} [CompleteSpace E] {g : ι → E →L[𝕜] F} (h : ∀ x, ∃ C, ∀ i, ‖g i x‖ ≤ C) :
     ∃ C', ∀ i, ‖g i‖ ≤ C' := by
   -- sequence of subsets consisting of those `x : E` with norms `‖g i x‖` bounded by `n`
   let e : ℕ → Set E := fun n ↦ ⋂ i : ι, { x : E | ‖g i x‖ ≤ n }
   -- each of these sets is closed
   have hc : ∀ n : ℕ, IsClosed (e n)
-  sorry
+  · intro n; apply isClosed_iInter; intro i
+    exact isClosed_le (continuous_norm.comp (g i).cont) continuous_const
   -- the union is the entire space; this is where we use `h`
   have hU : (⋃ n : ℕ, e n) = univ
-  sorry
+  · ext x; simp [mem_iUnion, mem_univ]; specialize h x
+    obtain ⟨C, hC⟩ := h
+    obtain ⟨m, hm⟩ : ∃ m : ℕ, C ≤ m := exists_nat_ge C
+    use m; simp [e, mem_iInter]
+    intro i; specialize hC i
+    linarith
   /- apply the Baire category theorem to conclude that for some `m : ℕ`,
        `e m` contains some `x` -/
-  obtain ⟨m, x, hx⟩ : ∃ m, ∃ x, x ∈ interior (e m) := sorry
-  obtain ⟨ε, ε_pos, hε⟩ : ∃ ε > 0, ball x ε ⊆ interior (e m) := sorry
-  obtain ⟨k, hk⟩ : ∃ k : 𝕜, 1 < ‖k‖ := sorry
+  obtain ⟨m, x, hx⟩ : ∃ m, ∃ x, x ∈ interior (e m) :=
+            nonempty_interior_of_iUnion_of_closed hc hU -- * Baire!
+  obtain ⟨ε, ε_pos, hε⟩ : ∃ ε > 0, ball x ε ⊆ interior (e m) := isOpen_iff.mp isOpen_interior x hx
+  obtain ⟨k, hk⟩ : ∃ k : 𝕜, 1 < ‖k‖ := NormedField.exists_one_lt_norm 𝕜
   -- show all elements in the ball have norm bounded by `m` after applying any `g i`
   have real_norm_le : ∀ z ∈ ball x ε, ∀ (i : ι), ‖g i z‖ ≤ m
-  sorry
-  have εk_pos : 0 < ε / ‖k‖ := sorry
+  · intro z hz i
+    replace hz := mem_iInter.mp (interior_iInter_subset _ <| hε hz) i
+    apply interior_subset hz
+  have εk_pos : 0 < ε / ‖k‖ := div_pos ε_pos <| by linarith
   refine ⟨(m + m : ℕ) / (ε / ‖k‖), fun i ↦ ContinuousLinearMap.opNorm_le_of_shell ε_pos ?_ hk ?_⟩
-  sorry
-  sorry
+  · exact div_nonneg (Nat.cast_nonneg _) εk_pos.le
+  intro y le_y y_lt
+  calc ‖g i y‖
+  _  = ‖g i (y + x) - g i x‖ := by simp
+  _  ≤ ‖g i (y + x)‖ + ‖g i x‖ := norm_sub_le _ _
+  _  ≤ (m + m : ℝ) := by apply add_le_add <;> apply real_norm_le <;>
+                    [rwa [add_comm, add_mem_ball_iff_norm]; exact mem_ball_self ε_pos]
+  _  = (m + m : ℕ) := by norm_cast
+  _  ≤ (m + m : ℕ) * (‖y‖ / (ε / ‖k‖)) :=
+          le_mul_of_one_le_right (Nat.cast_nonneg _) <|
+            (one_le_div <| div_pos ε_pos <| zero_lt_one.trans hk).2 le_y
+  _  = (m + m : ℕ) / (ε / ‖k‖) * ‖y‖ := (mul_comm_div _ _ _).symm
 
-end
+end Banach_Steinhaus
 
+/-! #### Asymptotic comparisons -/
 open Asymptotics
 
 example {α : Type*} {E : Type*} [NormedGroup E] {F : Type*} [NormedGroup F] (c : ℝ)
