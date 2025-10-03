@@ -39,6 +39,26 @@
 					"label": ""
 				}
 			]
+		},
+		{
+			"path": ".lake/packages/mathlib/Mathlib/Topology/Algebra/Module/Multilinear/Basic.lean",
+			"bookmarks": [
+				{
+					"line": 53,
+					"column": 0,
+					"label": ""
+				}
+			]
+		},
+		{
+			"path": ".lake/packages/mathlib/Mathlib/Analysis/Calculus/ContDiff/Defs.lean",
+			"bookmarks": [
+				{
+					"line": 1050,
+					"column": 0,
+					"label": ""
+				}
+			]
 		}
 	]
 }

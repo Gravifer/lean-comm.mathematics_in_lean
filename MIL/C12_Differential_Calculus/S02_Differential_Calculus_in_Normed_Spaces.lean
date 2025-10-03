@@ -161,6 +161,7 @@ example {α : Type*} {E : Type*} [NormedAddCommGroup E] (l : Filter α) (f g : �
     f ~[l] g ↔ (f - g) =o[l] g :=
   Iff.rfl
 
+/-! #### Differentiability -/
 section
 
 open Topology
@@ -173,16 +174,22 @@ example (f : E → F) (f' : E →L[𝕜] F) (x₀ : E) :
   hasFDerivAtFilter_iff_isLittleO ..
 
 example (f : E → F) (f' : E →L[𝕜] F) (x₀ : E) (hff' : HasFDerivAt f f' x₀) : fderiv 𝕜 f x₀ = f' :=
-  hff'.fderiv
+  hff'.fderiv  -- 'f' as in _Fréchet_
 
 example (n : ℕ) (f : E → F) : E → E[×n]→L[𝕜] F :=
   iteratedFDeriv 𝕜 n f
 
-example (n : ℕ∞) {f : E → F} :
+example (n : ℕ∞) {f : E → F} : -- ℕ∞ = ENat = WithTop ℕ
     ContDiff 𝕜 n f ↔
       (∀ m : ℕ, (m : WithTop ℕ) ≤ n → Continuous fun x ↦ iteratedFDeriv 𝕜 m f x) ∧
         ∀ m : ℕ, (m : WithTop ℕ) < n → Differentiable 𝕜 fun x ↦ iteratedFDeriv 𝕜 m f x :=
   contDiff_iff_continuous_differentiable
+#eval (⊤ : WithTop ℕ∞) = (⊤ : ℕ∞)
+#eval (⊤        :         ℕ∞) -- @none ℕ : Option ℕ
+#eval ((⊤ : ℕ∞) : WithTop ℕ∞) -- @some (Option ℕ) none : Option (Option ℕ)
+#eval ( ⊤       : WithTop ℕ∞) -- @none (Option ℕ) : Option (Option ℕ)
+#eval ( ⊥       : WithBot ℕ ) -- @none ℕ : Option ℕ
+#eval (⊤ : ℕ∞) = (⊥ : WithBot ℕ)
 
 example {𝕂 : Type*} [RCLike 𝕂] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E] {F : Type*}
     [NormedAddCommGroup F] [NormedSpace 𝕂 F] {f : E → F} {x : E} {n : WithTop ℕ∞}
