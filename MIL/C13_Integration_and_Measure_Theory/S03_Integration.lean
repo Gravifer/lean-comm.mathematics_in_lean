@@ -22,17 +22,20 @@ example {f g : α → E} (hf : Integrable f μ) (hg : Integrable g μ) :
     ∫ a, f a + g a ∂μ = ∫ a, f a ∂μ + ∫ a, g a ∂μ :=
   integral_add hf hg
 
+#check ENNReal -- extended nonnegative real numbers; usually denoted [0, ∞], relevant as the codomain of a measure
 example {s : Set α} (c : E) : ∫ x in s, c ∂μ = (μ s).toReal • c :=
   setIntegral_const c
 
 open Filter
 
+/-- dominated convergence theorem -/
 example {F : ℕ → α → E} {f : α → E} (bound : α → ℝ) (hmeas : ∀ n, AEStronglyMeasurable (F n) μ)
     (hint : Integrable bound μ) (hbound : ∀ n, ∀ᵐ a ∂μ, ‖F n a‖ ≤ bound a)
     (hlim : ∀ᵐ a ∂μ, Tendsto (fun n : ℕ ↦ F n a) atTop (𝓝 (f a))) :
     Tendsto (fun n ↦ ∫ a, F n a ∂μ) atTop (𝓝 (∫ a, f a ∂μ)) :=
   tendsto_integral_of_dominated_convergence bound hmeas hint hbound hlim
 
+/-- Fubini’s theorem -/
 example {α : Type*} [MeasurableSpace α] {μ : Measure α} [SigmaFinite μ] {β : Type*}
     [MeasurableSpace β] {ν : Measure β} [SigmaFinite ν] (f : α × β → E)
     (hf : Integrable f (μ.prod ν)) : ∫ z, f z ∂ μ.prod ν = ∫ x, ∫ y, f (x, y) ∂ν ∂μ :=
@@ -55,6 +58,7 @@ example (f : G → E) (g : G → E') (L : E →L[𝕜] E' →L[𝕜] F) (μ : Me
 
 end
 
+/-- change of variables -/
 example {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure] {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {s : Set E} {f : E → E}
