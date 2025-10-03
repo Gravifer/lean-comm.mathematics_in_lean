@@ -9,6 +9,7 @@ open Set Filter
 
 noncomputable section
 
+#print MeasurableSpace
 variable {α : Type*} [MeasurableSpace α]
 
 example : MeasurableSet (∅ : Set α) :=
@@ -20,6 +21,7 @@ example : MeasurableSet (univ : Set α) :=
 example {s : Set α} (hs : MeasurableSet s) : MeasurableSet (sᶜ) :=
   hs.compl
 
+-- `Encodable` means Constructively countable
 example : Encodable ℕ := by infer_instance
 
 example (n : ℕ) : Encodable (Fin n) := by infer_instance

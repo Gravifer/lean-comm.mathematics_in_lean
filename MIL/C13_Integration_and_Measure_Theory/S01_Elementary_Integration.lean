@@ -27,6 +27,8 @@ example {f : ℝ → ℝ} {a b : ℝ} {f' : ℝ → ℝ} (h : ∀ x ∈ [[a, b]]
     (h' : IntervalIntegrable f' volume a b) : (∫ y in a..b, f' y) = f b - f a :=
   integral_eq_sub_of_hasDerivAt h h'
 
+/- Even these elementary integrals are in fact Bochner integrals -/
+
 open Convolution
 
 example (f : ℝ → ℝ) (g : ℝ → ℝ) : f ⋆ g = fun x ↦ ∫ t, f t * g (x - t) :=
